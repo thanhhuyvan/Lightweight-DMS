@@ -1,0 +1,31 @@
+# === Python Environment ===
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# === IDE Configurations ===
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# === Data & Large Files (Bảo mật dung lượng) ===
+data/*_raw_landmarks.csv
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.zip
+*.tar.gz
+*.rar
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
