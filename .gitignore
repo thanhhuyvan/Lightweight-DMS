@@ -1,0 +1,19 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+.env
+
+# Project specific data (Large files)
+frame/frames_raw/
+frame/frames_clahe/
+frame/frames_mesh/
+frame/csv/*.csv
+
+# MediaPipe models
+*.task
+
+# IDEs
+.vscode/
+.idea/
