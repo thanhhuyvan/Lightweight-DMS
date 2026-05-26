@@ -1,42 +1,88 @@
 ﻿import subprocess
 import sys
+import time
+import logging
+import os
 from pathlib import Path
+from datetime import datetime
+
+# --- Configuration ---
+PROJECT_ROOT = Path(r'E:\Buồn ngủ')
+LOG_DIR = PROJECT_ROOT / 'logs'
+LOG_DIR.mkdir(exist_ok=True)
+
+# Setup logging
+now_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+log_file = LOG_DIR / ('pipeline_' + now_str + '.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
 def run_script(script_path):
-    print(f"\n--- Running: {script_path} ---")
+    logging.info('>>> Starting: ' + script_path.name)
+    start_time = time.time()
     try:
-        # Sử dụng python từ venv nếu có
-        venv_python = Path(r"E:\Buồn ngủ\.venv\Scripts\python.exe")
+        venv_python = PROJECT_ROOT / '.venv' / 'Scripts' / 'python.exe'
         python_exe = str(venv_python) if venv_python.exists() else sys.executable
-        
-        result = subprocess.run([python_exe, str(script_path)], check=True)
+        process = subprocess.run(
+            [python_exe, str(script_path)],
+            check=True,
+            text=True,
+            capture_output=True,
+            encoding='utf-8'
+        )
+        if process.stdout:
+            for line in process.stdout.splitlines():
+                if line.strip(): logging.info('  [STDOUT] ' + line)
+        duration = time.time() - start_time
+        logging.info('<<< Finished: ' + script_path.name + ' in ' + '{:.2f}'.format(duration) + 's')
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Error running {script_path}: {e}")
+        logging.error('!!! Error in ' + script_path.name + ':')
+        if e.stdout: logging.error('  [STDOUT] ' + e.stdout)
+        if e.stderr: logging.error('  [STDERR] ' + e.stderr)
+        return False
+    except Exception as e:
+        logging.error('!!! Unexpected error: ' + str(e))
         return False
 
 def main():
-    project_root = Path(r"E:\Buồn ngủ")
-    
-    # Danh sách các bước xử lý
+    start_pipeline = time.time()
+    logging.info('='*60)
+    logging.info('DROWSINESS DETECTION PIPELINE STARTING')
+    logging.info('Project Root: ' + str(PROJECT_ROOT))
+    logging.info('Log File: ' + str(log_file))
+    logging.info('='*60)
     steps = [
-        project_root / "Frame_exrtaction" / "4fps.py",
-        project_root / "frame" / "mesh_apply.py",
-        project_root / "to_csv.py"
+        ('Frame Extraction', PROJECT_ROOT / 'Frame_exrtaction' / '4fps.py'),
+        ('Face Mesh Processing', PROJECT_ROOT / 'frame' / 'mesh_apply.py'),
+        ('CSV Feature Export', PROJECT_ROOT / 'to_csv.py')
     ]
-    
-    print("Starting Drowsiness Detection Pipeline...")
-    
-    for script in steps:
+    success_count = 0
+    for name, script in steps:
+        logging.info('\n--- STEP ' + str(success_count + 1) + ': ' + name + ' ---')
         if script.exists():
-            success = run_script(script)
-            if not success:
-                print("Pipeline stopped due to error.")
+            if run_script(script):
+                success_count += 1
+            else:
+                logging.error('Pipeline halted at step: ' + name)
                 break
         else:
-            print(f"Warning: Script not found: {script}")
+            logging.error('Script missing: ' + str(script))
+            break
+    total_duration = time.time() - start_pipeline
+    logging.info('\n' + '='*60)
+    if success_count == len(steps):
+        logging.info('PIPELINE COMPLETED SUCCESSFULLY!')
+    else:
+        logging.info('PIPELINE FAILED at step ' + str(success_count + 1) + '/' + str(len(steps)))
+    logging.info('Total execution time: ' + '{:.2f}'.format(total_duration/60) + ' minutes')
+    logging.info('='*60)
 
-    print("\nPipeline execution finished.")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
