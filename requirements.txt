@@ -1,0 +1,8 @@
+numpy==2.4.6
+pandas==3.0.3
+opencv-python==4.13.0.92
+opencv-contrib-python==4.13.0.92
+matplotlib==3.10.9
+mediapipe==0.10.35
+pillow==12.2.0
+ipython==9.13.0
