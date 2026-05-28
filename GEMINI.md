@@ -26,6 +26,14 @@ The workflow is orchestrated by `main.py` and consists of three main steps:
     *   Reads `landmarks.csv`.
     *   Exports a summarized feature set to `frame/csv/features_summary.csv`.
 
+4.  **Calibration (`src/calibration.py`)**:
+    *   Uses the first 5 seconds of data to establish a baseline.
+    *   Calculates `EAR_open` (85th percentile) and sets a dynamic threshold `alpha = 0.75 * EAR_open`.
+
+5.  **Eye State Calculation (`src/eye_state.py`)**:
+    *   Applies the dynamic threshold to calculate the binary eye state `B(t)`.
+    *   Saves the results back to `features_summary.csv`.
+
 ## Directory Structure
 
 *   `Video_container/`: Input MP4 videos organized by participant.

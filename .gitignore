@@ -151,6 +151,7 @@ frame/frames_clahe/
 frame/frames_mesh/
 frame/csv/landmarks.csv
 frame/csv/landmarks_full.csv
+frame/csv/calibration_params.csv
 logs/
 report/
 video/

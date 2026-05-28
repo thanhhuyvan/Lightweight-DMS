@@ -58,6 +58,8 @@ def main():
         (PROJECT_ROOT / 'Frame_exrtaction' / '4fps.py', 'Frame Extraction & CLAHE'),
         (PROJECT_ROOT / 'frame' / 'Mesh_apply.py',      'Face Mesh & Landmark Generation'),
         (PROJECT_ROOT / 'to_csv.py',                    'Feature Extraction & Smoothing'),
+        (PROJECT_ROOT / 'src' / 'calibration.py',       'Calibration (Dynamic Alpha)'),
+        (PROJECT_ROOT / 'src' / 'eye_state.py',         'Eye State Calculation B(t)'),
         (PROJECT_ROOT / 'src' / 'analyze_failures.py',  'Failure Analysis Report')
     ]
 

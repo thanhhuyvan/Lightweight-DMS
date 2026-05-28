@@ -46,3 +46,4 @@ Tracking architectural refactoring, data quality, and modeling progress for the 
 | FD-03 | **Retry Logic**: Implement low-confidence retry in `mesh_apply.py` | 2026-05-28 | Added 0.15 threshold retry and 'method' logging |
 | FD-06 | Log confidence scores (method) in CSV output | 2026-05-28 | Integrated into Mesh_apply.py as 'detection_method' |
 | FD-05 | Refine interpolation (e.g., cubic spline) in `to_csv.py` | 2026-05-28 | Upgraded to Polynomial (ord 2) + Savitzky-Golay filter |
+| FEAT-03 | **Calibration & Dynamic Alpha**: Implement T_calib & alpha thresholds | 2026-05-28 | Calculated 85th percentile EAR; dynamic eye-state B(t) |
