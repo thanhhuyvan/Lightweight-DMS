@@ -30,9 +30,15 @@ The workflow is orchestrated by `main.py` and consists of three main steps:
     *   Uses the first 5 seconds of data to establish a baseline.
     *   Calculates `EAR_open` (85th percentile) and sets a dynamic threshold `alpha = 0.75 * EAR_open`.
 
-5.  **Eye State Calculation (`src/eye_state.py`)**:
-    *   Applies the dynamic threshold to calculate the binary eye state `B(t)`.
-    *   Saves the results back to `features_summary.csv`.
+6.  **Data Splitting (ML-03 - In Progress)**:
+    *   Implementing a group-based split strategy to ensure participants are not leaked across train/val/test sets.
+    *   Goal: Maintain participant independence for robust model evaluation.
+
+## Project Status (as of 2026-05-29)
+
+*   **Calibration & Dynamic Alpha**: Implemented and integrated.
+*   **Feature Engineering**: Baseline features (EAR, MAR, Head movement) and eye-state $B(t)$ are complete.
+*   **Current Focus**: Partitioning the dataset (ML-03) and preparing for baseline model training (ML-04).
 
 ## Directory Structure
 
