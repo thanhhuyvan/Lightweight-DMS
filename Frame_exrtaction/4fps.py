@@ -6,9 +6,12 @@ import cv2
 import shutil
 import multiprocessing
 
-# Add script directory to sys.path to allow importing config
-sys.path.append(str(Path(__file__).parent))
-from config import *
+# Add project root to sys.path to allow importing src.core_config
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
+from src.core_config import *
 
 def imread_unicode(path):
     try:
@@ -49,7 +52,7 @@ def process_video_worker(args):
     raw_target_dir = raw_base / video_name / p_folder
     clahe_target_dir = clahe_base / video_name / p_folder
     
-    # Delete existing folders if they exist to start fresh (redo)
+    # Delete existing folders if they exist to start fresh
     try:
         if raw_target_dir.exists():
             shutil.rmtree(raw_target_dir)
@@ -111,7 +114,6 @@ def main():
         if not p_video_dir.exists():
             continue
             
-        # Iterate through all videos in the participant directory
         for video_file in p_video_dir.glob('*.*'):
             if video_file.suffix.lower() not in ['.mp4', '.mov', '.avi']:
                 continue
@@ -127,13 +129,12 @@ def main():
                 FRAMES_CLAHE
             ))
             
-    print(f"Found {len(tasks)} videos to process in parallel.")
+    print(f"Found {len(tasks)} videos to process.")
     
     if not tasks:
         print("No videos found.")
         return
 
-    # Use multiprocessing Pool to process all tasks in parallel
     num_workers = min(18, len(tasks))
     print(f"Starting multiprocessing pool with {num_workers} workers...")
     

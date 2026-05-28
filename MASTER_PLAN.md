@@ -2,65 +2,65 @@
 
 This document outlines the workflow for managing group contributions, merging code via GitHub, and ensuring the correct execution sequence of the project pipeline.
 
-## 1. Git Workflow (Manager's Guide)
+## 1. Task Management (Kanban Board)
+
+We use **GitHub Projects** as our central Kanban board. 
+
+*   **Board Link**: [Lightweight DMS Board](https://github.com/users/thanhhuyvan/projects/2)
+*   **Workflow**:
+    1.  **Pick a Task**: Go to the board and select an issue from the **Todo** column.
+    2.  **Assign Yourself**: Click on the issue and set yourself as the **Assignee**. This tells the team you are working on it.
+    3.  **Update Status**: Drag your card to **In Progress** while coding.
+    4.  **Completion**: Once your PR is merged, the card will automatically move to **Done**.
+
+---
+
+## 2. Git Workflow (Manager's Guide)
 
 To protect the core dataset and maintain code quality, follow this branching and merging strategy:
 
 ### Branching Strategy
-- **`main` Branch**: Reserved for stable, verified code and the core preprocessed data (e.g., your 500MB CSV).
-- **Feature Branches**: Every group member must work on a separate branch named after their task (e.g., `feature/analysis`, `feature/modeling`).
+- **`main` Branch**: **STRICTLY PROTECTED.** Do not push directly to `main`.
+- **Feature Branches**: Every task must be on a separate branch (e.g., `feature/ML-02-sliding-windows`).
 
 ### PR Review & Merging Process
-1.  **Submission**: Members submit a Pull Request (PR) from their feature branch to `main`.
-2.  **Local Verification**: Before merging, the Manager fetches the PR branch to test locally:
+1.  **Submission**: Submit a Pull Request (PR) from your feature branch to `main`.
+2.  **Linking**: Include the issue number in your PR description (e.g., "Closes #13") to auto-sync the Kanban board.
+3.  **Local Verification**: Before merging, the Manager (or reviewer) must test locally:
     ```powershell
     git fetch origin
-    git checkout feature/member-task-name
-    python main.py  # Run the pipeline to check for regressions
+    git checkout feature/your-branch-name
+    python main.py  # Verify the pipeline still runs correctly
     ```
-3.  **Architectural Audit**: Ensure the new code:
-    - Uses `pathlib` for all file operations.
-    - References `config.py` for all paths and constants.
-    - Logs errors/status via the `logging` system instead of `print()`.
-4.  **Approval**: Once verified, merge the PR on GitHub.
+4.  **Architectural Audit**: Ensure the new code follows `pathlib` standards and uses `src/core_config.py`.
 
 ---
 
-## 2. Pipeline Sequencing (Master Orchestration)
+## 3. Pipeline Sequencing (Master Orchestration)
 
-To ensure all scripts run in the correct order, `main.py` acts as the single source of truth for execution.
-
-### The `steps` List
-All new scripts must be added to the `steps` array in `main.py` in their logical order. **Never run individual scripts in isolation for production results.**
+The `main.py` script is the single source of truth for execution. **All new scripts must be added to the `steps` list in `main.py`.**
 
 **Current Sequence:**
-1. `Frame_exrtaction/4fps.py` (Preprocessing)
-2. `frame/mesh_apply.py` (Landmark Detection)
-3. `to_csv.py` (Feature Extraction)
-
-**How to Add New Tasks:**
-Edit `main.py` and append the new script path to the `steps` list:
-```python
-steps = [
-    ('Frame Extraction', PROJECT_ROOT / 'Frame_exrtaction' / '4fps.py'),
-    ('Face Mesh Processing', PROJECT_ROOT / 'frame' / 'mesh_apply.py'),
-    ('CSV Feature Export', PROJECT_ROOT / 'to_csv.py'),
-    ('New Task Name', PROJECT_ROOT / 'path' / 'to' / 'new_script.py') # Added by Manager
-]
-```
+1. `Frame_exrtaction/4fps.py` (Preprocessing & CLAHE)
+2. `frame/Mesh_apply.py` (Face Mesh & Landmark Generation)
+3. `to_csv.py` (Feature Extraction & Smoothing)
+4. `src/analyze_failures.py` (Failure Analysis Report)
 
 ---
 
-## 3. Data Integrity Standards
+## 4. Data Integrity & Quality Standards
 
-- **Path Safety**: All scripts must use the `PROJECT_ROOT` variable from `config.py`.
-- **Large Files**: The 500MB CSV (`landmarks_full.csv`) should be treated as **read-only** by analysis scripts to prevent accidental corruption.
-- **Environment**: All members must use the shared `.venv` and update `requirements.txt` if new libraries are introduced.
+- **Path Safety**: Use `PROJECT_ROOT` from `core_config.py` for all file paths.
+- **Failure Handling**: Our current face detection failure rate is **7.88%**. 
+    - `participant1` is a known outlier (~31% failure). 
+    - When writing ML or Analysis scripts, ensure you handle `face_detected == False` rows properly (e.g., via interpolation or exclusion).
+- **Read-Only Data**: Treat `landmarks_full.csv` as read-only. Save all new features into `features_summary.csv` or new files.
 
 ---
 
-## 4. Manager's Checklist for PRs
-- [ ] Does the code follow `pathlib` standards?
-- [ ] Is the script correctly registered in `main.py`?
-- [ ] Does it run without breaking previous steps?
-- [ ] Are new requirements added to `requirements.txt`?
+## 5. Contributor Checklist
+- [ ] Is your task assigned to you on the GitHub Project board?
+- [ ] Does your branch name follow the `feature/ID-description` format?
+- [ ] Did you add your script to the `steps` in `main.py`?
+- [ ] Did you update `requirements.txt` if you added new libraries?
+- [ ] Does your code use `logging` instead of `print()`?
