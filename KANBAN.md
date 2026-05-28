@@ -15,8 +15,8 @@ Tracking architectural refactoring, data quality, and modeling progress for the 
 | Task ID | Task Description | Status | Priority | Category |
 | :--- | :--- | :--- | :--- | :--- |
 | ML-01 | Research initial model architectures (Random Forest/LSTM) | Done | Medium | Modeling |
-| ML-02 | **Feature Engineering**: Sliding windows & temporal deltas | In Progress | High | Modeling |
-| ML-03 | **Data Splitting**: Group split by participant (Train/Val/Test) | Todo | High | Modeling |
+| ML-02 | **Feature Engineering**: Sliding windows & temporal deltas | Done | High | Modeling |
+| ML-03 | **Data Splitting**: Group split by participant (Train/Val/Test) | In Progress | High | Modeling |
 | ML-04 | Train Baseline Model (Random Forest) | Todo | Medium | Modeling |
 | ML-05 | Train Temporal Model (LSTM or GRU) | Todo | Medium | Modeling |
 | ML-06 | **Evaluation**: Metrics report (F1, Confusion Matrix) | Todo | High | Modeling |
@@ -31,12 +31,14 @@ Tracking architectural refactoring, data quality, and modeling progress for the 
 
 | Task ID | Task Description | Started | Priority |
 | :--- | :--- | :--- | :--- |
-| ML-02 | **Feature Engineering**: Sliding windows & temporal deltas | 2026-05-28 | High |
+| ML-03 | **Data Splitting**: Group split by participant (Train/Val/Test) | 2026-05-29 | High |
 
 ## Completed
 
 | Task ID | Task Description | Completed | Notes |
 | :--- | :--- | :--- | :--- |
+| FEAT-03 | **Calibration & Dynamic Alpha**: Implement T_calib & alpha thresholds | 2026-05-29 | Calculated 85th percentile EAR; dynamic eye-state B(t) |
+| ML-02 | **Feature Engineering**: Sliding windows & temporal deltas | 2026-05-29 | Completed baseline feature extraction and eye-state B(t) |
 | ML-01 | Research initial model architectures (Random Forest/LSTM) | 2026-05-28 | Found Random Forest best for baseline; LSTM for temporal |
 | SETUP-01 | Project structure and Master Plan established | 2026-05-28 | |
 | SETUP-02 | Initial Pipeline (Frames -> Mesh -> CSV) functional | 2026-05-28 | |
@@ -46,4 +48,3 @@ Tracking architectural refactoring, data quality, and modeling progress for the 
 | FD-03 | **Retry Logic**: Implement low-confidence retry in `mesh_apply.py` | 2026-05-28 | Added 0.15 threshold retry and 'method' logging |
 | FD-06 | Log confidence scores (method) in CSV output | 2026-05-28 | Integrated into Mesh_apply.py as 'detection_method' |
 | FD-05 | Refine interpolation (e.g., cubic spline) in `to_csv.py` | 2026-05-28 | Upgraded to Polynomial (ord 2) + Savitzky-Golay filter |
-| FEAT-03 | **Calibration & Dynamic Alpha**: Implement T_calib & alpha thresholds | 2026-05-28 | Calculated 85th percentile EAR; dynamic eye-state B(t) |
