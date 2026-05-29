@@ -1,30 +1,47 @@
-# Lightweight-DMS Task Board (Synced with GitHub Issues)
+# Lightweight-DMS Task Board (Phased Sequence)
 
-## 🚀 In Progress (UPLOAD HERE)
+This board is organized by **Phase Order**. Members should complete tasks in the numerical order specified for their role.
 
-| Issue | Task Description | Phase | Branch / GitHub Location |
-| :--- | :--- | :--- | :--- |
-| **#5** | **[Layer 1] Thiết lập mô hình 3D chuẩn và Trích xuất 6 điểm mốc cốt lõi** | Phase 1 (Vision) | `feature/pnp-head-pose` |
-| **#6** | **[Layer 1] Cấu hình ma trận Camera và giải cv2.solvePnP()** | Phase 1 (Vision) | `feature/pnp-head-pose` |
-| **#14** | **[ML-03] Data Splitting: Participant Grouping** | Phase 3 (ML) | `main` |
-| **ML-04** | **[ML-04] Train Baseline Model (Random Forest)** | Phase 3 (ML) | `feature/ML-04-random-forest` |
+---
 
-## 📋 Backlog (To-Do)
+## 🟢 Phase 1: Computer Vision (Vision Specialist)
+*Goal: Ensure high-quality frame extraction and accurate landmark/pose data.*
 
-| Issue | Task Description | Phase | Branch Location |
-| :--- | :--- | :--- | :--- |
-| **#8** | [Postprocessing] Tiền xử lý Frame đầu vào (CLAHE) & MediaPipe Mesh Core | Phase 1 (Vision) | `feature/preprocessing-clahe` |
-| **#13** | [ML-02] Feature Engineering: Sliding windows | Phase 2 (Data Eng) | `main` |
-| **#1** | (Calibration) | Phase 2 (Data Eng) | `feature/calibration-alpha-3` |
-| **#7** | [Layer 1] Trích xuất góc lượng giác Euler | Phase 1 (Vision) | `feature/pnp-head-pose` |
-| **#9** | [Logic Layer] Xây dựng bộ quy tắc logic tích hợp ngữ cảnh (Contextual Fusion) | Phase 2 (Data Eng) | `feature/contextual-fusion` |
-| **#10** | [Logic Layer] Bộ lọc hành vi quan sát an toàn (Context Filter) | Phase 2 (Data Eng) | `main` |
-| **#15** | [ML-04] Train Baseline Model (Random Forest) | Phase 3 (ML) | `main` |
-| **#16** | [DEP-01] Real-time Camera Inference | Phase 3 (ML) | `main` |
+| Order | Issue | Task Description | Status | Branch |
+| :--- | :--- | :--- | :--- | :--- |
+| **1 (Begin)** | **#8** | [Postprocessing] Preprocessing (CLAHE) & Face Mesh | ✅ Done | `feature/preprocessing-clahe` |
+| **2** | **#5** | [Layer 1] 3D Model Setup & Core Landmarks | 🚀 In Progress | `feature/pnp-head-pose` |
+| **3** | **#6** | [Layer 1] solvePnP Config & Camera Matrix | 🚀 In Progress | `feature/pnp-head-pose` |
+| **4 (End)** | **#7** | [Layer 1] Euler Angles (Yaw, Pitch, Roll) | 📋 Todo | `feature/pnp-head-pose` |
 
-## ✅ Completed (Merged)
+---
 
-| Issue | Task Description | Branch used |
-| :--- | :--- | :--- |
-| **#2** | [Feature] Trích xuất landmark vùng mắt và tính toán chỉ số EAR | `feature/calculate-ear` |
-| **#4** | [Feature] Thiết lập Cửa sổ trượt tính PERCLOS (60s) | `feature/perclos-window` |
+## 🟡 Phase 2: Data Engineering (Feature Engineer)
+*Goal: Convert raw landmarks into meaningful signals and cleaned CSVs.*
+
+| Order | Issue | Task Description | Status | Branch |
+| :--- | :--- | :--- | :--- | :--- |
+| **1 (Begin)** | **#13** | [ML-02] Feature Engineering: Sliding windows | ✅ Done | `main` |
+| **2** | **#1** | [Logic] Calibration Alpha (Dynamic Thresholds) | ✅ Done | `feature/calibration-alpha-3` |
+| **3** | **#9** | [Logic] Contextual Fusion (Rule-based Logic) | 📋 Todo | `feature/contextual-fusion` |
+| **4 (End)** | **#10** | [Logic] Context Filter (Behavioral Safety) | 📋 Todo | `main` |
+
+---
+
+## 🔵 Phase 3: Machine Learning (ML Lead)
+*Goal: Build the intelligence to detect drowsiness with high accuracy.*
+
+| Order | Issue | Task Description | Status | Branch |
+| :--- | :--- | :--- | :--- | :--- |
+| **1 (Begin)** | **#14** | [ML-03] Participant-Based Data Splitting | 🚀 In Progress | `main` |
+| **2** | **#15** | [Dataset] Train/Val/Test Partitioning | 📋 Todo | `main` |
+| **3** | **ML-04** | [ML-04] Train Random Forest Baseline | 🚀 In Progress | `feature/ML-04-random-forest` |
+| **4 (End)** | **#16** | [DEP-01] Real-time Camera Inference | 📋 Todo | `main` |
+
+---
+
+## ✅ Legend
+- **Order**: Follow this sequence strictly.
+- **Done**: Merged into `main`.
+- **In Progress**: Coding currently happening.
+- **Todo**: Waiting for the previous step to finish.
