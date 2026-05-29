@@ -22,27 +22,32 @@ To ensure everyone knows their domain, we follow a **3-Phase Specialized Workflo
 ### A. The Pipeline Map (Mermaid)
 This diagram maps current tasks to the execution sequence.
 ```mermaid
-graph TD
-    subgraph "Phase 1: Computer Vision (Role: Vision Specialist)"
-        T1["[#8] Preprocessing (CLAHE)"] --> P1["4fps.py"]
-        T2["[#5, #6] PnP Head Pose"] --> P2["Mesh_apply.py"]
+graph LR
+    subgraph P1 [Phase 1: Computer Vision]
+        direction LR
+        P1_Logic(Core Vision Pipeline) --- P1_Tasks["<b>TASKS:</b><br/>- #8 [Postprocessing] Preprocessing (CLAHE) & Face Mesh<br/>- #5 [Layer 1] 3D Model Setup & Core Landmarks<br/>- #6 [Layer 1] solvePnP Config & Camera Matrix<br/>- #7 [Layer 1] Euler Angles (Yaw, Pitch, Roll)"]
     end
 
-    subgraph "Phase 2: Data Engineering (Role: Feature Engineer)"
-        P2 --> T3["[#13] Sliding Windows"]
-        T3 --> P3["to_csv.py"]
-        P3 --> T4["[#1] Calibration Alpha"]
+    subgraph P2 [Phase 2: Data Engineering]
+        direction LR
+        P2_Logic(Signal Processing) --- P2_Tasks["<b>TASKS:</b><br/>- #13 [ML-02] Feature Engineering: Sliding windows<br/>- #1 [Logic] Calibration Alpha (Dynamic Thresholds)<br/>- #9 [Logic] Contextual Fusion (Rule-based Logic)<br/>- #10 [Logic] Context Filter (Behavioral Safety)"]
     end
 
-    subgraph "Phase 3: Machine Learning (Role: ML Lead)"
-        T4 --> T5["[#14] ML-03 Data Splitting"]
-        T5 --> T6["[ML-04] Train Random Forest"]
-        T6 --> P4["main.py (Final Integration)"]
+    subgraph P3 [Phase 3: Machine Learning]
+        direction LR
+        P3_Logic(Model Intelligence) --- P3_Tasks["<b>TASKS:</b><br/>- #14 [ML-03] Participant-Based Data Splitting<br/>- #15 [Dataset] Train/Val/Test Partitioning<br/>- ML-04 [ML-04] Train Random Forest Baseline<br/>- #16 [DEP-01] Real-time Camera Inference"]
     end
 
-    style T1 fill:#f9f,stroke:#333
-    style T5 fill:#bbf,stroke:#333
-    style T6 fill:#bbf,stroke:#333
+    P1 --> P2
+    P2 --> P3
+
+    %% Styling
+    style P1_Tasks text-align:left,fill:#fff,stroke:#333
+    style P2_Tasks text-align:left,fill:#fff,stroke:#333
+    style P3_Tasks text-align:left,fill:#fff,stroke:#333
+    style P1_Logic fill:#f9f,stroke:#333,stroke-width:2px
+    style P2_Logic fill:#ffd,stroke:#333,stroke-width:2px
+    style P3_Logic fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ### B. The 3-Person Role Matrix

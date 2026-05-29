@@ -1,0 +1,26 @@
+graph LR
+    subgraph P1 [Phase 1: Computer Vision]
+        direction LR
+        P1_Logic(Core Vision Pipeline) --- P1_Tasks["<b>TASKS:</b><br/>- #8 Preprocessing (CLAHE)<br/>- #5 3D Model Setup<br/>- #6 solvePnP Config<br/>- #7 Euler Angles"]
+    end
+
+    subgraph P2 [Phase 2: Data Engineering]
+        direction LR
+        P2_Logic(Signal Processing) --- P2_Tasks["<b>TASKS:</b><br/>- #13 Sliding Windows<br/>- #1 Calibration Alpha<br/>- #9 Contextual Fusion<br/>- #10 Context Filter"]
+    end
+
+    subgraph P3 [Phase 3: Machine Learning]
+        direction LR
+        P3_Logic(Model Intelligence) --- P3_Tasks["<b>TASKS:</b><br/>- #14 Data Splitting<br/>- #15 Data Partitioning<br/>- ML-04 Random Forest<br/>- #16 Camera Inference"]
+    end
+
+    P1 --> P2
+    P2 --> P3
+
+    %% Styling
+    style P1_Tasks text-align:left,fill:#fff,stroke:#333
+    style P2_Tasks text-align:left,fill:#fff,stroke:#333
+    style P3_Tasks text-align:left,fill:#fff,stroke:#333
+    style P1_Logic fill:#f9f,stroke:#333,stroke-width:2px
+    style P2_Logic fill:#ffd,stroke:#333,stroke-width:2px
+    style P3_Logic fill:#bbf,stroke:#333,stroke-width:2px
