@@ -1,38 +1,34 @@
-# Project Kanban - Buồn ngủ (Lightweight-DMS)
+# Lightweight-DMS Task Board (Synced with GitHub Issues)
 
-## Overview
-Tracking architectural refactoring, data quality, and modeling progress for the Drowsiness Detection pipeline.
+## 🚀 In Progress (UPLOAD HERE)
 
-## In Progress (UPLOAD HERE)
+| Issue | Task Description | Branch / GitHub Location |
+| :--- | :--- | :--- |
+| **#5** | **[Layer 1] Thiết lập mô hình 3D chuẩn và Trích xuất 6 điểm mốc cốt lõi** | 🚩 **UPLOAD TO:** `feature/pnp-head-pose` |
+| **#14** | **[ML-03] Data Splitting: Participant Grouping** | 🚩 **UPLOAD TO:** `main` |
+| **#6** | **[Layer 1] Cấu hình ma trận Camera và giải cv2.solvePnP()** | 🚩 **UPLOAD TO:** `feature/pnp-head-pose` |
 
-| Task ID | Task Description | Started | Priority | **Branch / GitHub Location** |
-| :--- | :--- | :--- | :--- | :--- |
-| **L1-01** | **3D Model & 6 Landmarks** | 2026-05-29 | High | 🚩 **UPLOAD TO:** `feature/pnp-head-pose` |
-| **ML-03** | **Data Splitting** | 2026-05-29 | High | 🚩 **UPLOAD TO:** `main` |
+## 📋 Backlog (To-Do)
 
-## Backlog (Planned Tasks)
+### Layer 1 & Features
+| Issue | Task Description | Branch Location |
+| :--- | :--- | :--- |
+| **#7** | [Layer 1] Trích xuất góc lượng giác Euler | → `feature/pnp-head-pose` |
+| **#9** | [Logic Layer] Xây dựng bộ quy tắc logic tích hợp ngữ cảnh (Contextual Fusion) | → `feature/contextual-fusion` |
+| **#10** | [Logic Layer] Bộ lọc hành vi quan sát an toàn (Context Filter) | → `main` |
 
-### Modeling (ML)
-| Task ID | Task Description | Status | **Branch / GitHub Location** |
-| :--- | :--- | :--- | :--- |
-| **FUSE-01** | **Contextual Fusion** | Todo | 🚩 **USE BRANCH:** `feature/contextual-fusion` |
-| **ML-04** | Train Baseline Model (RF) | Todo | → `main` |
-| **ML-05** | Train Temporal Model (LSTM) | Todo | → `main` |
+### Machine Learning & Deployment
+| Issue | Task Description | Branch Location |
+| :--- | :--- | :--- |
+| **#15** | [ML-04] Train Baseline Model (Random Forest) | → `main` |
+| **#16** | [DEP-01] Real-time Camera Inference | → `main` |
 
-### Data Quality & Processing
-| Task ID | Task Description | Status | Branch |
-| :--- | :--- | :--- | :--- |
-| FD-02 | Manually audit sample frames | Todo | `main` |
-| FD-04 | Test sharpening for failed frames | Todo | `main` |
+## ✅ Completed (Merged)
 
-## Completed
-
-| Task ID | Task Description | Completed | Notes | Branch |
-| :--- | :--- | :--- | :--- | :--- |
-| FEAT-03 | **Calibration & Dynamic Alpha** | 2026-05-29 | Calculated 85th percentile EAR | `feature/calibration-alpha-3` |
-| PRE-01 | **CLAHE Preprocessing** | 2026-05-29 | Enhanced frame contrast | `feature/preprocessing-clahe` |
-| FEAT-01 | **EAR Calculation** | 2026-05-29 | Baseline EAR features | `feature/calculate-ear` |
-| FEAT-02 | **PERCLOS** | 2026-05-29 | Temporal eye closure | `feature/perclos-window` |
-| SETUP-01 | Project structure and Master Plan established | 2026-05-28 | | |
-| ARCH-02 | Centralize paths/constants in `src/core_config.py` | 2026-05-28 | Unified all scripts | |
-| FD-01 | Create `src/analyze_failures.py` | 2026-05-28 | Found 7.88% failure rate | |
+| Issue | Task Description | Branch used |
+| :--- | :--- | :--- |
+| **#2** | [Feature] Trích xuất landmark vùng mắt và tính toán chỉ số EAR | `feature/calculate-ear` |
+| **#4** | [Feature] Thiết lập Cửa sổ trượt tính PERCLOS (60s) | `feature/perclos-window` |
+| **#8** | [Postprocessing] Tiền xử lý Frame đầu vào (CLAHE) & MediaPipe Mesh Core | `feature/preprocessing-clahe` |
+| **#13** | [ML-02] Feature Engineering: Sliding windows | `main` |
+| **#1** | (Calibration) | `feature/calibration-alpha-3` |
