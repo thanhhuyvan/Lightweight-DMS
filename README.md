@@ -1,3 +1,7 @@
+# Lightweight Driver Monitoring System (DMS)
+
+![Task Flow Roadmap](image/task-flow.png)
+
 ## Team Collaboration
 - **Task & Branch Mapping**: Check [KANBAN.md](./KANBAN.md) to see which branch you should use for your assigned task.
 - **Rules**: 
