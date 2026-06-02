@@ -10,9 +10,10 @@ This board is organized by **Phase Order**. Members should complete tasks in the
 | Order | Issue | Task Description | Status | Branch |
 | :--- | :--- | :--- | :--- | :--- |
 | **1 (Begin)** | **#8** | [Postprocessing] Preprocessing (CLAHE) & Face Mesh | ✅ Done | `feature/preprocessing-clahe` |
-| **2** | **#5** | [Layer 1] 3D Model Setup & Core Landmarks | 🚀 In Progress | `feature/pnp-head-pose` |
-| **3** | **#6** | [Layer 1] solvePnP Config & Camera Matrix | 🚀 In Progress | `feature/pnp-head-pose` |
-| **4 (End)** | **#7** | [Layer 1] Euler Angles (Yaw, Pitch, Roll) | 📋 Todo | `feature/pnp-head-pose` |
+| **2** | **#2** | [Feature] Eye Landmark Extraction & EAR Calculation | 📋 Todo | `main` |
+| **3** | **#5** | [Layer 1] 3D Model Setup & Core Landmarks | 🚀 In Progress | `feature/pnp-head-pose` |
+| **4** | **#6** | [Layer 1] solvePnP Config & Camera Matrix | 🚀 In Progress | `feature/pnp-head-pose` |
+| **5 (End)** | **#7** | [Layer 1] Euler Angles (Yaw, Pitch, Roll) | 📋 Todo | `feature/pnp-head-pose` |
 
 ---
 
@@ -22,9 +23,10 @@ This board is organized by **Phase Order**. Members should complete tasks in the
 | Order | Issue | Task Description | Status | Branch |
 | :--- | :--- | :--- | :--- | :--- |
 | **1 (Begin)** | **#13** | [ML-02] Feature Engineering: Sliding windows | ✅ Done | `main` |
-| **2** | **#1** | [Logic] Calibration Alpha (Dynamic Thresholds) | ✅ Done | `feature/calibration-alpha-3` |
-| **3** | **#9** | [Logic] Contextual Fusion (Rule-based Logic) | 📋 Todo | `feature/contextual-fusion` |
-| **4 (End)** | **#10** | [Logic] Context Filter (Behavioral Safety) | 📋 Todo | `main` |
+| **2** | **#4** | [Feature] PERCLOS Sliding Window Setup (60s) | 📋 Todo | `main` |
+| **3** | **#1** | [Logic] Calibration Alpha (Dynamic Thresholds) | ✅ Done | `feature/calibration-alpha-3` |
+| **4** | **#9** | [Logic] Contextual Fusion (Rule-based Logic) | 📋 Todo | `feature/contextual-fusion` |
+| **5 (End)** | **#10** | [Logic] Context Filter (Behavioral Safety) | 📋 Todo | `main` |
 
 ---
 
