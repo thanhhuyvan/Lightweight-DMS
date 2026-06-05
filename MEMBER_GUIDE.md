@@ -1,59 +1,68 @@
 # 📘 Lightweight-DMS: Master Member Guide
 
-This guide provides technical specifications for implementing each stage of the drowsiness detection pipeline.
+Chào mừng bạn tham gia dự án! Đây là hướng dẫn giúp bạn bắt đầu code và đóng góp mà không gặp khó khăn, ngay cả khi bạn mới dùng GitHub lần đầu.
 
 ---
 
-## 🟢 Stage 1: Computer Vision (Vision Specialist)
+## 🚀 1. Hướng dẫn nhanh cho người mới (Git Workflow)
 
-### **Landmark Calculation (EAR/MAR)**
-*   **Indices**: Right Eye `[33, 160, 158, 133, 153, 144]`, Left Eye `[362, 385, 386, 263, 374, 380]`.
-*   **Geometric Formula**: $EAR = \frac{\|P_2 - P_6\| + \|P_3 - P_5\|}{2 \|P_1 - P_4\|}$
+Để không làm hỏng code của nhau, chúng ta sử dụng quy trình **"Nhánh tính năng" (Feature Branch)**. Hãy làm theo các bước sau:
 
-### **3D Pose Estimation**
-*   **Implementation**: Use `cv2.solvePnP`.
-*   **Required Outputs**: `yaw`, `pitch`, and `roll` angles saved to `landmarks_full.csv`.
-
----
-
-## 🟡 Stage 2 & 3: Data Engineering (Feature Engineer)
-
-### **Stage 2: Signal Integrity**
-*   **Interpolation**: Use `pandas.interpolate(method='polynomial', order=2)` for gaps $\le 4$ frames.
-*   **Smoothing**: Apply `savgol_filter(window_length=5, polyorder=2)`.
-
-### **Stage 3: Duration Logic (Filtering)**
-*   **Goal**: Distinguish physical blinks from physiological closures.
-*   **Classification Rules**:
-    *   `blink`: $eye\_state=1$ for $\le 2$ frames ($0.5s$).
-    *   `micro_sleep`: $eye\_state=1$ for $\ge 4$ consecutive frames ($1.0s$).
-*   **Metric**: Calculate `closure_frequency` and `average_closure_duration` per video segment.
+1.  **Tạo nhánh mới để làm việc**: (Thay `ID-task` bằng mã số Issue bạn làm, ví dụ: `17-duration-logic`)
+    ```powershell
+    git checkout main
+    git pull origin main
+    git checkout -b feature/ID-task
+    ```
+2.  **Code và Lưu lại**:
+    ```powershell
+    git add .
+    git commit -m "feat: mô tả ngắn gọn việc bạn đã làm"
+    ```
+3.  **Đẩy code lên GitHub**:
+    ```powershell
+    git push origin feature/ID-task
+    ```
+4.  **Tạo Pull Request (PR)**: Lên trang GitHub của dự án, bạn sẽ thấy nút "Compare & pull request". Nhấn vào đó và nhờ Manager review.
 
 ---
 
-## 🟡 Stage 4: Statistical Aggregation (Feature Engineer)
+## 📂 2. Cấu trúc thư mục bạn cần biết
 
-### **Behavioral Vector Generation**
-*   **Window Size**: 240 frames (60 seconds).
-*   **Stride**: 4 frames (1 second).
-*   **Key Features**:
-    *   `PERCLOS`: Frames with $eye\_state=1$ per window.
-    *   `EAR_Var`: Variance of the EAR signal (Indicates gaze stability).
-    *   `Pose_Jitter`: Sum of variances of Yaw, Pitch, and Roll.
+*   **`src/`**: Nơi chứa tất cả các file xử lý logic mới (Tạo file của bạn ở đây).
+*   **`frame/csv/`**: Nơi chứa dữ liệu đầu vào (`features_summary.csv`).
+*   **`main.py`**: File chạy chính. Sau khi code xong, bạn phải đăng ký script của mình vào đây.
 
 ---
 
-## 🔵 Stage 5: Machine Learning (ML Lead)
+## 🛠️ 3. Chi tiết kỹ thuật theo Stage
 
-### **Training Protocol**
-*   **Target Variable**: `video_id` (0: Alert, 5: Drowsy, 10: Sleep).
-*   **Model**: Random Forest Classifier with `n_estimators=100`.
-*   **Splitting**: `GroupKFold` using `participant_id` as the grouping factor.
-*   **Optimization**: Prioritize **Recall** for the 'Sleeping' (10) class.
+### **Giai đoạn 1: Vision Specialist**
+*   **Nhiệm vụ**: Trích xuất EAR/MAR và Pose.
+*   **Lưu ý**: Luôn sử dụng `cv2.solvePnP` và lưu kết quả vào `landmarks_full.csv`.
+
+### **Giai đoạn 2 & 3: Feature Engineer**
+*   **Nhiệm vụ #21 (Duration Logic)**: Tạo file `src/duration_logic.py`.
+    *   `blink`: Mắt đóng <= 2 khung hình.
+    *   `micro_sleep`: Mắt đóng >= 4 khung hình liên tiếp.
+*   **Nhiệm vụ #4 (Aggregation)**: Tạo file `src/stats_aggregation.py`.
+    *   Tính trung bình/độ lệch chuẩn trong cửa sổ 60 giây (240 dòng).
+
+### **Giai đoạn 4: ML Lead**
+*   **Nhiệm vụ #15 (Training)**: Tạo file `src/train_behavioral.py`.
+    *   Mục tiêu: Dự đoán nhãn 0, 5, 10 từ các chỉ số thống kê.
 
 ---
 
-## 🛠️ Operational Standards
-1.  **Centralized Config**: Never hardcode paths. Import `PROJECT_ROOT` from `src.core_config`.
-2.  **Failure Analysis**: Log the percentage of `face_detected == False` for every processed video.
-3.  **Output Integrity**: Final features must be merged into `frame/csv/features_summary.csv`.
+## ✅ 4. Checklist "Định nghĩa Hoàn thành"
+Trước khi báo cáo xong việc, hãy đảm bảo:
+- [ ] Code của bạn không dùng đường dẫn tuyệt đối (C:\Users\...). Hãy dùng `PROJECT_ROOT` từ `core_config.py`.
+- [ ] Script của bạn đã được thêm vào danh sách `steps` trong `main.py`.
+- [ ] Dữ liệu kết quả đã được lưu/ghi đè vào `frame/csv/features_summary.csv`.
+- [ ] Bạn đã chạy thử `python main.py` và không có lỗi.
+
+---
+
+## 🆘 Cần hỗ trợ?
+*   Đọc kỹ file **`METHODOLOGY.md`** để hiểu công thức toán học.
+*   Nhắn tin cho Manager nếu gặp lỗi xung đột code (Conflict).
