@@ -2,27 +2,37 @@
 
 This is the interactive progress tracker. Members should check the boxes as they complete steps.
 
+[👉 View/Edit Diagram in Mermaid Live Editor](https://mermaid.live/edit#pako:eNptkctuwjAQRX_FmhowpPCh6iIhhIQUtatU7KIszCQmMTYenmAnRPnvnRAnfXvunTtzL_Y-9D4NIsA7v2mE1uD2n1S3YJvG-62Gz5vX9_N0-Ytq_M8U72Zp1Yp8S7Z_Jp9E6iXzEOnFIsZ6idSizNisLNb_xN7zGOmZ5vYQ6clizvR8NGe-HiyfRer5eM78pM-ZrxYzN-19YvWSuT9EeqTYmY470-3Z6f_E5_OIsUonZ53KclO5O8X27_TTmF_T8UUnO_u8XFX9mO5ZzI8Uq5O5P5_5D2xOByv2-vGg-U-2-XF96p-v1e88O1Os97yM9Z4Z_u3M7p-vzeuV7Xf-8Y_T_6D_F-wXfD8)
+
 ```mermaid
 graph TD
-    subgraph S1 [Stage 1: Computer Vision]
-        S1_Logic(Geometric Extraction) --- S1_Tasks["- #8 Preprocessing (CLAHE)<br/>- #2 Eye/Mouth Landmarks<br/>- #5 3D Model Setup<br/>- #6 solvePnP Config<br/>- #7 Euler Angles"]
+    subgraph Stage1 [Stage 1: Computer Vision]
+        S1_1[#8 Preprocessing]
+        S1_2[#2 Eye/Mouth Landmarks]
+        S1_3[#5-7 Head Pose]
     end
 
-    subgraph S2 [Stage 2 & 3: Signal & Duration]
-        S2_Logic(Refinement & Logic) --- S2_Tasks["- #1 Calibration Alpha<br/>- #13 Interpolation/Smoothing<br/>- #17 Duration Logic"]
+    subgraph Stage23 [Stage 2 & 3: Signal & Logic]
+        S2_1[#1 Calibration]
+        S2_2[#13 Interpolation/Smoothing]
+        S2_3[#17 Duration Logic]
     end
 
-    subgraph S4 [Stage 4: Statistical Aggregation]
-        S4_Logic(Sliding Window) --- S4_Tasks["- #4 60s Aggregated Vectors<br/>- #9 Contextual Fusion<br/>- #10 Safety Filters"]
+    subgraph Stage4 [Stage 4: Stats Aggregation]
+        S4_1[#4 60s Sliding Window]
+        S4_2[#9 Contextual Fusion]
+        S4_3[#10 Safety Filters]
     end
 
-    subgraph S5 [Stage 5: Machine Learning]
-        S5_Logic(Behavioral Classifier) --- S5_Tasks["- #14 GroupKFold Splitting<br/>- ML-04 RF Classifier<br/>- #16 Real-time Integration"]
+    subgraph Stage5 [Stage 5: Machine Learning]
+        S5_1[#14 Participant Splitting]
+        S5_2[ML-04 RF Classifier]
+        S5_3[#16 Real-time Integration]
     end
 
-    S1 --> S2
-    S2 --> S4
-    S4 --> S5
+    Stage1 --> Stage23
+    Stage23 --> Stage4
+    Stage4 --> Stage5
 ```
 
 ---

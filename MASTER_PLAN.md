@@ -1,27 +1,21 @@
-# Master Project Plan: Behavioral Drowsiness Detection
+# Master Project Plan: Behavioral Drowsiness Detection System
 
-This document defines the scientific framework, architectural standards, and execution roadmap for the Lightweight-DMS project.
-
----
-
-## 1. System Objectives
-The primary goal is to build a robust, participant-independent monitoring system that distinguishes between:
-*   **Biological Blinks**: Normal, high-frequency physical movements.
-*   **Physiological Drowsiness**: Sustained behavioral patterns indicative of fatigue.
+## 1. Executive Summary
+This project implements a multi-stage monitoring pipeline designed to detect physiological drowsiness using non-intrusive facial analysis. The system differentiates between normal biological behaviors (blinks) and pathological fatigue (micro-sleeps) through temporal statistical aggregation.
 
 ---
 
-## 2. Modular Architecture (5-Stage Pipeline)
+## 2. Scientific Framework & Modular Architecture
 
-Our architecture is designed as a series of specialized layers to ensure signal purity and classification accuracy.
+### 2.1. System Workflow (5-Stage Pipeline)
+The architecture follows a strict sequential flow to ensure signal purity and behavioral significance.
 
-### A. Pipeline Visualization
 ```mermaid
 graph LR
-    S1(Stage 1: CV) --> S2(Stage 2: Signal)
-    S2 --> S3(Stage 3: Logic)
-    S3 --> S4(Stage 4: Stats)
-    S4 --> S5(Stage 5: ML)
+    S1[Stage 1: CV] --> S2[Stage 2: Signal]
+    S2 --> S3[Stage 3: Logic]
+    S3 --> S4[Stage 4: Stats]
+    S4 --> S5[Stage 5: ML]
 
     style S1 fill:#f9f,stroke:#333
     style S2 fill:#ffd,stroke:#333
@@ -30,43 +24,44 @@ graph LR
     style S5 fill:#dfd,stroke:#333
 ```
 
-### B. Functional Breakdown
-1.  **Stage 1: Computer Vision**: Landmark localization and pixel-to-coordinate mapping.
-2.  **Stage 2: Signal Integrity**: Noise removal, interpolation of face-loss, and dynamic baseline calibration.
-3.  **Stage 3: Duration Logic**: Temporal segmentation of eye states (e.g., $duration < 0.3s = blink$).
-4.  **Stage 4: Statistical Aggregation**: Compiling 60-second behavioral vectors (PERCLOS, Variance, Frequency).
-5.  **Stage 5: Machine Learning**: High-level classification of the driver's physiological state (Alert/Drowsy/Sleeping).
+### 2.2. Functional Layer Descriptions
+1.  **Stage 1: Computer Vision (Localization)**: Mapping facial pixels to a 3D coordinate system (Face Mesh).
+2.  **Stage 2: Signal Integrity (Conditioning)**: Removing noise, interpolating missing frames, and personalizing thresholds.
+3.  **Stage 3: Duration Logic (Segmentation)**: Classification of eye closure events based on temporal length ($T$).
+4.  **Stage 4: Statistical Aggregation (Context)**: Generating a behavioral vector over a 60-second sliding window.
+5.  **Stage 5: Machine Learning (Inference)**: Final classification of the physiological state (Alert vs. Drowsy).
 
 ---
 
-## 3. Data Integrity & Validation Standards
+## 3. Rigorous Validation & Data Standards
 
-To ensure scientific rigor, all contributions must adhere to these standards:
+### 3.1. Protective Layers (System Guardrails)
+*   **Layer 1 (Signal)**: Polynomial interpolation (Order 2) for face-loss compensation.
+*   **Layer 2 (Duration)**: Pre-filtering blinks ($T < 0.3s$) to reduce ML noise.
+*   **Layer 3 (Context)**: Cross-verifying ocular closure (EAR) with vestibular changes (Head Pose).
+*   **Layer 4 (Persistence)**: Prediction smoothing over 60s windows to prevent alert flickering.
 
-### A. Protective Layers (Fail-Safes)
-*   **Signal Integrity**: No training on "broken" windows; interpolation is mandatory for gaps < 1s.
-*   **Contextual Fusion**: EAR closure must be cross-verified with Head Pose "nodding" to increase alert confidence.
-*   **Temporal Persistence**: Predictions are based on a 60s window to eliminate "flickering" false alarms.
-
-### B. Machine Learning Rigor
-*   **Zero Leakage**: Use `GroupKFold` by `participant_id`. Data from one face must never be in both Train and Test.
-*   **Target Clarity**: ML targets behavioral video-labels (0, 5, 10), NOT deterministic frame-states.
-
----
-
-## 4. Operational Roadmap (Sequencing)
-
-The pipeline is orchestrated via `main.py`. New modules must be registered in the following order:
-
-1.  `4fps.py` -> `Mesh_apply.py` (Geometric Data)
-2.  `to_csv.py` -> `calibration.py` (Signal Cleansing)
-3.  `duration_logic.py` (Behavioral Segmentation)
-4.  `stats_aggregation.py` (Window Aggregation)
-5.  `train_behavioral.py` (Physiological Classification)
+### 3.2. Machine Learning Protocols
+*   **Group Independence**: Mandatory use of `GroupKFold` to prevent participant leakage.
+*   **Target Hierarchy**: ML targets behavioral labels (0, 5, 10), while deterministic states (eye_state) serve as input features.
 
 ---
 
-## 5. Contributor Standards
-*   **Logic over Code**: Prioritize the "Why" (Methodology) before the "How" (Implementation).
-*   **Git Integrity**: Feature branches only. 100% path safety using `core_config.py`.
-*   **Logging**: All scripts must track execution duration and data loss metrics.
+## 4. Execution Roadmap (Sequencing)
+
+| Stage | Module | Primary Output |
+| :--- | :--- | :--- |
+| **1** | `4fps.py` | CLAHE Enhanced Frames |
+| **1** | `Mesh_apply.py` | 3D Landmarks & Raw Ratios |
+| **2** | `to_csv.py` | Smoothed/Interpolated Signals |
+| **2** | `calibration.py` | Dynamic $\alpha$ Thresholds |
+| **3** | `duration_logic.py` | Micro-sleep & Blink Count |
+| **4** | `stats_aggregation.py` | 60s Behavioral Vectors |
+| **5** | `train_behavioral.py` | Trained Random Forest Model |
+
+---
+
+## 5. Engineering Standards
+*   **Infrastructure**: All paths must resolve via `core_config.py`.
+*   **Collaboration**: Branch-based workflow (`feature/ID-desc`).
+*   **Verification**: 100% logging of data loss and execution latency.
