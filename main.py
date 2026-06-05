@@ -60,6 +60,7 @@ def main():
         (PROJECT_ROOT / 'to_csv.py',                    'Feature Extraction & Smoothing'),
         (PROJECT_ROOT / 'src' / 'calibration.py',       'Calibration (Dynamic Alpha)'),
         (PROJECT_ROOT / 'src' / 'eye_state.py',         'Eye State Calculation B(t)'),
+        (PROJECT_ROOT / 'src' / 'features_perclos.py',  'PERCLOS Feature Calculation'),
         (PROJECT_ROOT / 'src' / 'analyze_failures.py',  'Failure Analysis Report')
     ]
 

@@ -25,9 +25,10 @@ FRAMES_CLAHE  = OUTPUT_ROOT / 'frames_clahe'
 FRAMES_MESH   = OUTPUT_ROOT / 'frames_mesh'
 FAILED_DIR    = OUTPUT_ROOT / 'failed_detections'
 CSV_DIR       = OUTPUT_ROOT / 'csv'
+MODEL_SAVE_DIR = PROJECT_ROOT / 'models'
 
 # Ensure directories exist
-for d in [FRAMES_RAW, FRAMES_CLAHE, FRAMES_MESH, FAILED_DIR, CSV_DIR, LOG_DIR]:
+for d in [FRAMES_RAW, FRAMES_CLAHE, FRAMES_MESH, FAILED_DIR, CSV_DIR, LOG_DIR, MODEL_SAVE_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
 # -- Pipeline Configuration --

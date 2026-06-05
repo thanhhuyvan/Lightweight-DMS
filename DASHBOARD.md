@@ -2,42 +2,54 @@
 
 This is the interactive progress tracker. Members should check the boxes as they complete steps.
 
-**📘 Reference**: [Master Member Guide](MEMBER_GUIDE.md) — *Consult this for technical requirements and formulas.*
+```mermaid
+graph TD
+    subgraph S1 [Stage 1: Computer Vision]
+        S1_Logic(Geometric Extraction) --- S1_Tasks["- #8 Preprocessing (CLAHE)<br/>- #2 Eye/Mouth Landmarks<br/>- #5 3D Model Setup<br/>- #6 solvePnP Config<br/>- #7 Euler Angles"]
+    end
+
+    subgraph S2 [Stage 2 & 3: Signal & Duration]
+        S2_Logic(Refinement & Logic) --- S2_Tasks["- #1 Calibration Alpha<br/>- #13 Interpolation/Smoothing<br/>- #17 Duration Logic"]
+    end
+
+    subgraph S4 [Stage 4: Statistical Aggregation]
+        S4_Logic(Sliding Window) --- S4_Tasks["- #4 60s Aggregated Vectors<br/>- #9 Contextual Fusion<br/>- #10 Safety Filters"]
+    end
+
+    subgraph S5 [Stage 5: Machine Learning]
+        S5_Logic(Behavioral Classifier) --- S5_Tasks["- #14 GroupKFold Splitting<br/>- ML-04 RF Classifier<br/>- #16 Real-time Integration"]
+    end
+
+    S1 --> S2
+    S2 --> S4
+    S4 --> S5
+```
 
 ---
 
 ## 🟢 Phase 1: Computer Vision (Vision Specialist)
-*Files: `4fps.py`, `Mesh_apply.py`*
-
-- [x] **#8: [Postprocessing] Preprocessing (CLAHE) & Face Mesh** - *Ensure frames are clear and lighting is balanced.*
-- [ ] **#2: [Feature] Eye Landmark Extraction & EAR Calculation** - *Verify eye landmarks and EAR stability.*
-- [ ] **#5: [Layer 1] 3D Model Setup & Core Landmarks** - *Verify the 6 core landmarks are extracted correctly.*
-- [ ] **#6: [Layer 1] solvePnP Config & Camera Matrix** - *Calibrate the camera matrix for head pose estimation.*
-- [ ] **#7: [Layer 1] Euler Angles (Yaw, Pitch, Roll)** - *Finalize Yaw, Pitch, and Roll extraction.*
-
----
+- [x] **#8: [Stage 1] Preprocessing (CLAHE) & Face Mesh**
+- [x] **#2: [Stage 1] Eye & Mouth Landmark Extraction (EAR/MAR)**
+- [ ] **#5: [Stage 1] 3D Model Setup & Core Landmarks**
+- [ ] **#6: [Stage 1] solvePnP Config & Camera Matrix**
+- [ ] **#7: [Stage 1] Euler Angles (Yaw, Pitch, Roll)**
 
 ## 🟡 Phase 2: Data Engineering (Feature Engineer)
-*Files: `to_csv.py`, `calibration.py`*
-
-- [x] **#13: [ML-02] Feature Engineering: Sliding windows** - *Implement the temporal windowing logic.*
-- [ ] **#4: [Feature] PERCLOS Sliding Window Setup (60s)** - *Calculate PERCLOS over 60s windows.*
-- [x] **#1: [Logic] Calibration Alpha (Dynamic Thresholds)** - *Set up dynamic thresholds based on initial frames.*
-- [ ] **#9: [Logic] Contextual Fusion (Rule-based Logic)** - *Integrate head pose and EAR signals.*
-- [ ] **#10: [Logic] Context Filter (Behavioral Safety)** - *Apply behavioral safety rules to the final signal.*
-
----
+- [x] **#1: [Stage 2] Calibration Alpha (Dynamic Thresholds)**
+- [x] **#13: [Stage 2] Signal Refinement (Interpolation & Smoothing)**
+- [ ] **#17: [Stage 3] Duration Logic (Blinks vs. Micro-sleeps)**
+- [ ] **#4: [Stage 4] Statistical Aggregation (60s Sliding Window)**
+- [ ] **#9: [Stage 4] Contextual Fusion (EAR + Head Pose)**
+- [ ] **#10: [Stage 4] Behavioral Safety Filter (Post-processing)**
 
 ## 🔵 Phase 3: Machine Learning (ML Lead)
-*Files: `train_baseline.py`, `eye_state.py`*
-
-- [ ] **#14: [ML-03] Participant-Based Data Splitting** - *Implement participant-based GroupKFold.*
-- [ ] **#15: [Dataset] Train/Val/Test Partitioning** - *Create final Train/Val/Test sets.*
-- [ ] **ML-04: [ML-04] Train Random Forest Baseline** - *Train and evaluate the baseline model.*
-- [ ] **#16: [DEP-01] Real-time Camera Inference** - *Integrate the model into the real-time main.py.*
+- [ ] **#14: [Stage 5] Participant-Based Data Splitting**
+- [ ] **#15: [Stage 5] Dataset Partitioning (Train/Val/Test)**
+- [ ] **ML-04: [Stage 5] Train Behavioral Random Forest Classifier**
+- [ ] **#16: [DEP-01] Real-time Pipeline Integration**
 
 ---
 
 ## 🛠 Management Notes
 - **Verification**: Only check a box after the PR has been merged into `main`.
-- **Blocked**: If a task is waiting on another phase, leave it unchecked.
+- **Reference**: Consult [METHODOLOGY.md](METHODOLOGY.md) for technical formulas.
