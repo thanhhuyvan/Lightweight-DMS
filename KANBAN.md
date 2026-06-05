@@ -22,7 +22,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | **1** | **#1** | [Stage 2] Calibration Alpha (Dynamic Thresholds) | ✅ Done | `main` |
 | **2** | **#13** | [Stage 2] Signal Refinement (Interpolation & Smoothing) | ✅ Done | `main` |
-| **3** | **#17** | [Stage 3] Duration Logic (Blinks vs. Micro-sleeps) | 📋 Todo | `feature/duration-logic` |
+| **3** | **#21** | [Stage 3] Duration Logic (Blinks vs. Micro-sleeps) | 📋 Todo | `feature/duration-logic` |
 | **4** | **#4** | [Stage 4] Statistical Aggregation (60s Sliding Window) | 🚀 In Progress | `feature/perclos-stats` |
 | **5** | **#9** | [Stage 4] Contextual Fusion (EAR + Head Pose) | 📋 Todo | `feature/contextual-fusion` |
 | **6** | **#10** | [Stage 4] Behavioral Safety Filter (Post-processing) | 📋 Todo | `main` |
@@ -35,8 +35,8 @@
 | Order | Issue | Task Description | Status | Branch |
 | :--- | :--- | :--- | :--- | :--- |
 | **1** | **#14** | [Stage 5] Participant-Based Data Splitting (GroupKFold) | 🚀 In Progress | `main` |
-| **2** | **#15** | [Stage 5] Dataset Partitioning (Train/Val/Test) | 📋 Todo | `main` |
-| **3** | **ML-04** | [Stage 5] Train Behavioral Random Forest Classifier | 🚀 In Progress | `feature/ML-04-behavioral` |
+| **2** | **#22** | [Stage 5] Dataset Partitioning (Train/Val/Test) | 📋 Todo | `main` |
+| **3** | **#15** | [Stage 5] Train Behavioral Random Forest Classifier | 🚀 In Progress | `feature/ML-04-behavioral` |
 | **4** | **#16** | [DEP-01] Real-time Pipeline Integration | 📋 Todo | `main` |
 
 ---

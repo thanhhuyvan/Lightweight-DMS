@@ -47,15 +47,15 @@ graph TD
 ## 🟡 Phase 2: Data Engineering (Feature Engineer)
 - [x] **#1: [Stage 2] Calibration Alpha (Dynamic Thresholds)**
 - [x] **#13: [Stage 2] Signal Refinement (Interpolation & Smoothing)**
-- [ ] **#17: [Stage 3] Duration Logic (Blinks vs. Micro-sleeps)**
+- [ ] **#21: [Stage 3] Duration Logic (Blinks vs. Micro-sleeps)**
 - [ ] **#4: [Stage 4] Statistical Aggregation (60s Sliding Window)**
 - [ ] **#9: [Stage 4] Contextual Fusion (EAR + Head Pose)**
 - [ ] **#10: [Stage 4] Behavioral Safety Filter (Post-processing)**
 
 ## 🔵 Phase 3: Machine Learning (ML Lead)
 - [ ] **#14: [Stage 5] Participant-Based Data Splitting**
-- [ ] **#15: [Stage 5] Dataset Partitioning (Train/Val/Test)**
-- [ ] **ML-04: [Stage 5] Train Behavioral Random Forest Classifier**
+- [ ] **#22: [Stage 5] Dataset Partitioning (Train/Val/Test)**
+- [ ] **#15: [Stage 5] Train Behavioral Random Forest Classifier**
 - [ ] **#16: [DEP-01] Real-time Pipeline Integration**
 
 ---
