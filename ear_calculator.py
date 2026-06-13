@@ -17,7 +17,7 @@ Test độc lập:
 """
 
 import math
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # ──────────────────────────────────────────────
 # Chỉ mục landmark vùng mắt (MediaPipe 468-point mesh)
@@ -30,8 +30,8 @@ from typing import List, Tuple
 #
 #   EAR = (||p2-p6|| + ||p3-p5||) / (2 * ||p1-p4||)
 # ──────────────────────────────────────────────
-LEFT_EYE_IDXS: List[int] = [33, 160, 158, 133, 153, 144]
-RIGHT_EYE_IDXS: List[int] = [362, 385, 387, 263, 373, 380]
+RIGHT_EYE_IDXS: List[int] = [33, 160, 158, 133, 153, 144]
+LEFT_EYE_IDXS: List[int] = [362, 385, 387, 263, 373, 380]
 
 
 def _euclidean(p1: Tuple[float, float], p2: Tuple[float, float]) -> float:
@@ -77,39 +77,45 @@ def compute_single_ear(
     return ear
 
 
-def compute_ear_avg(landmarks, img_w: int, img_h: int) -> float:
+def compute_ear_avg(landmarks, img_w: int, img_h: int) -> Optional[float]:
     """
     Tính EAR trung bình cả hai mắt.
 
     Parameters
     ----------
-    landmarks : list
+    landmarks : list or None
         Danh sách 468+ đối tượng landmark (MediaPipe NormalizedLandmark).
+        Nếu None hoặc rỗng, trả về None.
     img_w, img_h : int
         Kích thước ảnh gốc (pixel).
 
     Returns
     -------
-    float
-        EAR_avg = (EAR_left + EAR_right) / 2.
+    float or None
+        EAR_avg = (EAR_right + EAR_left) / 2, hoặc None nếu landmarks không hợp lệ.
     """
-    ear_left = compute_single_ear(landmarks, LEFT_EYE_IDXS, img_w, img_h)
-    ear_right = compute_single_ear(landmarks, RIGHT_EYE_IDXS, img_w, img_h)
-    return (ear_left + ear_right) / 2.0
+    # Kiểm tra null-safety
+    if landmarks is None or len(landmarks) < 400:
+        return None
+
+    try:
+        ear_right = compute_single_ear(landmarks, RIGHT_EYE_IDXS, img_w, img_h)
+        ear_left = compute_single_ear(landmarks, LEFT_EYE_IDXS, img_w, img_h)
+        return (ear_right + ear_left) / 2.0
+    except (IndexError, AttributeError):
+        return None
 
 
 # ══════════════════════════════════════════════
 # Test độc lập bằng camera
 # ══════════════════════════════════════════════
 def run_camera_test():
-    """Mở webcam, detect khuôn mặt và in EAR realtime. Đóng cửa sổ matplotlib để thoát."""
+    """Mở webcam, detect khuôn mặt và in EAR realtime. Nhấn 'q' để thoát."""
     import os
-    import shutil
     import tempfile
     import urllib.request
 
     import cv2
-    import matplotlib.pyplot as plt
     import mediapipe as mp
     from mediapipe.tasks import python as mp_python
     from mediapipe.tasks.python import vision
@@ -146,19 +152,13 @@ def run_camera_test():
         return
 
     print("=" * 50)
-    print("  EAR Live Test — Đóng cửa sổ matplotlib để thoát")
+    print("  EAR Live Test — Nhấn 'q' để thoát")
     print("  Mở mắt bình thường → EAR ~ 0.25–0.35")
     print("  Nhắm mắt           → EAR < 0.18")
     print("=" * 50)
 
-    # ── Thiết lập Matplotlib interactive mode ──
-    plt.ion()
-    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-    fig.canvas.manager.set_window_title("EAR Live Test")
-    im_display = None
-
     try:
-        while plt.fignum_exists(fig.number):
+        while True:
             ret, frame_bgr = cap.read()
             if not ret:
                 break
@@ -169,8 +169,8 @@ def run_camera_test():
 
             results = landmarker.detect(mp_image)
 
-            # Tạo bản vẽ trên frame RGB (cho matplotlib)
-            display_frame = frame_rgb.copy()
+            # Tạo bản vẽ trên frame BGR (cho OpenCV imshow)
+            display_frame = frame_bgr.copy()
 
             if results.face_landmarks:
                 face_lms = results.face_landmarks[0]
@@ -178,29 +178,40 @@ def run_camera_test():
                 # ── Tính EAR_avg bằng hàm module ──
                 ear_avg = compute_ear_avg(face_lms, w, h)
 
-                # Xác định trạng thái
-                status = "CLOSED" if ear_avg < 0.20 else "OPEN"
-                color_rgb = (255, 0, 0) if status == "CLOSED" else (0, 200, 0)
+                if ear_avg is not None:
+                    # Xác định trạng thái
+                    status = "CLOSED" if ear_avg < 0.20 else "OPEN"
+                    color_bgr = (0, 0, 255) if status == "CLOSED" else (0, 200, 0)
 
-                # In ra console
-                print(f"EAR_avg = {ear_avg:.4f}  [{status}]")
+                    # In ra console
+                    print(f"EAR_avg = {ear_avg:.4f}  [{status}]")
 
-                # Vẽ text EAR lên frame
-                cv2.putText(
-                    display_frame,
-                    f"EAR: {ear_avg:.3f} [{status}]",
-                    (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.8,
-                    color_rgb,
-                    2,
-                )
+                    # Vẽ text EAR lên frame
+                    cv2.putText(
+                        display_frame,
+                        f"EAR: {ear_avg:.3f} [{status}]",
+                        (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        color_bgr,
+                        2,
+                    )
 
-                # Vẽ landmark mắt trái & phải
-                for idx in LEFT_EYE_IDXS + RIGHT_EYE_IDXS:
-                    lm = face_lms[idx]
-                    cx, cy = int(lm.x * w), int(lm.y * h)
-                    cv2.circle(display_frame, (cx, cy), 3, (0, 100, 255), -1)
+                    # Vẽ landmark mắt phải & trái
+                    for idx in RIGHT_EYE_IDXS + LEFT_EYE_IDXS:
+                        lm = face_lms[idx]
+                        cx, cy = int(lm.x * w), int(lm.y * h)
+                        cv2.circle(display_frame, (cx, cy), 3, (0, 100, 255), -1)
+                else:
+                    cv2.putText(
+                        display_frame,
+                        "Error computing EAR",
+                        (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        (0, 0, 255),
+                        2,
+                    )
             else:
                 cv2.putText(
                     display_frame,
@@ -208,25 +219,23 @@ def run_camera_test():
                     (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.8,
-                    (255, 0, 0),
+                    (0, 0, 255),
                     2,
                 )
 
-            # Cập nhật matplotlib
-            if im_display is None:
-                im_display = ax.imshow(display_frame)
-                ax.axis("off")
-            else:
-                im_display.set_data(display_frame)
+            # Hiển thị bằng OpenCV
+            cv2.imshow("EAR Live Test", display_frame)
 
-            fig.canvas.draw_idle()
-            fig.canvas.flush_events()
+            # Thoát nếu nhấn 'q'
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                print("Stopped by user.")
+                break
 
     except KeyboardInterrupt:
         print("\nStopped by user.")
 
     cap.release()
-    plt.close(fig)
+    cv2.destroyAllWindows()
     landmarker.close()
     print("Camera test ended.")
 
