@@ -1,5 +1,66 @@
 # Technical Specification: Robust Hybrid Framework with Residual Fallback
 
+## 0. System Architecture
+```mermaid
+graph TD
+    %% Input Layer
+    Input[RAW IR VIDEO STREAM] --> Pre[Pre-processing: CLAHE]
+    
+    %% Stage 1: Landmark Tracking
+    Pre --> MP[MediaPipe Face Mesh Core]
+    
+    subgraph "STAGE 1: DUAL-STREAM EXTRACTION"
+        direction LR
+        %% Branch A: Geometry
+        MP --> BrA[BRANCH A: KINEMATIC GEOMETRY]
+        BrA --> Geo1[Asymmetric EAR Calculation]
+        BrA --> Geo2[solvePnP Head Pose: P/Y/R]
+        Geo1 & Geo2 --> Norm[10s Window Min-Max Scaling]
+        
+        %% Branch B: Appearance
+        MP --> BrB[BRANCH B: APPEARANCE PATCHES]
+        BrB --> Crop[Landmark-Guided Cropping]
+        Crop --> Pad[Isotropic Square Padding]
+        Pad --> CNN_In[24x24 Grayscale Image]
+    end
+
+    %% Stage 2: Fusion
+    subgraph "STAGE 2: FEATURE FUSION (FiLM)"
+        Norm --> MLP[MLP Parameter Generator]
+        MLP -->|Gamma & Beta| FiLM[FiLM Modulation Layer]
+        CNN_In --> MobNet[MobileNetV3-Small Backbone]
+        MobNet --> FiLM
+    end
+
+    %% Stage 3: Temporal Modeling
+    subgraph "STAGE 3: TEMPORAL PERSISTENCE"
+        FiLM --> Gate{Soft Gating Fusion}
+        MP -->|Confidence Score| Gate
+        Mask[Trainable MASK Embedding] -.->|Lost Tracking| Gate
+        Gate --> GRU[Single-Layer GRU]
+        GRU --> Att[Class-Weight Temporal Attention]
+    end
+
+    %% Stage 5: Classification
+    subgraph "STAGE 5: RESIDUAL FALLBACK"
+        direction TB
+        Norm --> XGB[XGBoost Geometry Baseline]
+        Att --> Residual[DL Residual Delta Score: ΔS]
+        XGB -->|S_base| Sum[SUMMATION]
+        Residual -->|ΔS| Sum
+    end
+
+    %% Output
+    Sum --> Output([FINAL STATE: Alert / Low / Drowsy])
+
+    %% Styling
+    style XGB fill:#f96,stroke:#333,stroke-width:2px
+    style Output fill:#00c853,color:#fff,stroke-width:2px
+    style Mask fill:#eee,stroke-dasharray: 5 5
+    style BrA fill:#bbdefb
+    style BrB fill:#c8e6c9
+```
+
 ## 1. Core Architecture Philosophy
 The system is built on a **"Safety-First"** principle. We use deterministic 3D geometry as a reliable baseline and Deep Learning as a high-precision refinement layer. The goal is to maximize **F1-Score** by reducing inter-participant variance.
 
