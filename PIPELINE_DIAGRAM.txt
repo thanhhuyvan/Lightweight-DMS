@@ -1,28 +1,106 @@
-                          [Raw Video (4 FPS)]
-                                  │
-                                  ▼
-             [Phase 1: Computer Vision & Preprocessing]
-    (CLAHE Enhancement -> MediaPipe Face Mesh -> Landmark Extraction)
-                                  │
-                                  ▼
-             [Phase 2: Data Engineering & Signal Refinement]
-    (Savitzky-Golay Smoothing -> Polynomial Interpolation -> EAR/MAR/Pose)
-                                  │
-                                  ▼
-             [Phase 3: Duration Logic & Frame-level Stats]
-    (Blink Detection [<0.3s] -> Micro-sleep [>1.0s] -> Head Jitter/Variance)
-                                  │
-                                  ▼
-             [Phase 4: Sliding Window Aggregation (60s)]
-    (PERCLOS -> Mean/Std EAR -> Yawn Frequency -> Pose Stability Index)
-                                  │
-                                  ▼
-             [Phase 5: Machine Learning Classification]
-    (Random Forest Classifier -> Final Prediction: Alert/Drowsy/Sleeping)
+# Lightweight-DMS: Hybrid Architecture Diagram
+# Date: 2026-06-15
 
----------------------------------------------------------------------------
-PROTECTIVE LAYERS:
-1. Signal Integrity: Handle face-loss via interpolation to avoid window gaps.
-2. Duration Logic: Filter biological blinks from physiological drowsiness.
-3. Temporal Persistence: 60s window prevents "flickering" alerts.
-4. Contextual Fusion: Cross-verify EAR closure with Head Pose "nodding".
+## 1. Mermaid Architecture Diagram
+(Copy and paste this into Mermaid Live Editor: https://mermaid.live/)
+
+```mermaid
+graph TD
+    %% Input Layer
+    Input[RAW IR VIDEO STREAM <br/> 640x480 @ 10-15 FPS] --> Pre[Pre-processing: CLAHE]
+    
+    %% Stage 1: Landmark Tracking
+    Pre --> MP[MediaPipe Face Mesh Core]
+    
+    subgraph "STAGE 1: DUAL-STREAM EXTRACTION"
+        direction LR
+        %% Branch A: Geometry
+        MP --> BrA[BRANCH A: KINEMATIC GEOMETRY]
+        BrA --> Geo1[Asymmetric EAR Calculation]
+        BrA --> Geo2[solvePnP Head Pose: P/Y/R]
+        Geo1 & Geo2 --> Norm[10s Window Min-Max Scaling]
+        
+        %% Branch B: Appearance
+        MP --> BrB[BRANCH B: APPEARANCE PATCHES]
+        BrB --> Crop[Landmark-Guided Cropping]
+        Crop --> Pad[Isotropic Square Padding]
+        Pad --> CNN_In[24x24 Grayscale Image]
+    end
+
+    %% Stage 2: Fusion
+    subgraph "STAGE 2: FEATURE FUSION (FiLM)"
+        Norm --> MLP[MLP Parameter Generator]
+        MLP -->|Gamma & Beta| FiLM[FiLM Modulation Layer]
+        CNN_In --> MobNet[MobileNetV3-Small Backbone]
+        MobNet --> FiLM
+    end
+
+    %% Stage 3: Temporal Modeling
+    subgraph "STAGE 3: TEMPORAL PERSISTENCE"
+        FiLM --> Gate{Soft Gating Fusion}
+        MP -->|Confidence Score| Gate
+        Mask[Trainable MASK Embedding] -.->|Lost Tracking| Gate
+        Gate --> GRU[Single-Layer GRU]
+        GRU --> Att[Class-Weight Temporal Attention]
+    end
+
+    %% Stage 5: Classification
+    subgraph "STAGE 5: RESIDUAL FALLBACK"
+        direction TB
+        Norm --> XGB[XGBoost Geometry Baseline]
+        Att --> Residual[DL Residual Delta Score: ΔS]
+        XGB -->|S_base| Sum[SUMMATION]
+        Residual -->|ΔS| Sum
+    end
+
+    %% Output
+    Sum --> Output([FINAL STATE: Alert / Low / Drowsy])
+
+    %% Styling
+    style XGB fill:#f96,stroke:#333,stroke-width:2px
+    style Output fill:#00c853,color:#fff,stroke-width:2px
+    style Mask fill:#eee,stroke-dasharray: 5 5
+    style BrA fill:#bbdefb
+    style BrB fill:#c8e6c9
+```
+
+## 2. Textual Block Diagram
+```text
+[ INPUT: IR Camera Stream ]
+           |
+           ▼
+[ PRE-PROCESSING (CLAHE) ]
+           |
+           ▼
+[ MEDIA PIPE FACE MESH (468 Landmarks) ]
+           |
+   ________________|_________________
+  |                                  |
+  ▼ [ BRANCH A: GEOMETRY ]           ▼ [ BRANCH B: APPEARANCE ]
+  - Asymmetric EAR (|L-R|)           - Landmark-Guided Crop
+  - solvePnP (Pitch, Yaw, Roll)      - Isotropic Padding (1:1)
+  - Min-Max Normalization            - Grayscale Patch (24x24)
+  |                                  |
+  ▼                                  ▼
+[ MLP GENERATOR (γ, β) ] --------> [ FiLM MODULATION ]
+                                     (Math steers Pixels)
+                                     |
+                                     ▼
+                           [ GATED GRU (Memory) ] <--- Confidence (σ)
+                                     |
+                                     ▼
+                           [ TEMPORAL ATTENTION ]
+                                     |
+   __________________________________|
+  |
+  ▼ [ RESIDUAL FALLBACK LAYER ]
+  Score = [XGBoost Baseline] + [DL Residual ΔS]
+           |
+           ▼
+[ OUTPUT: Alert / Low Vigilant / Drowsy ]
+```
+
+## 3. Residual Fallback Logic
+The model ensures industrial safety by keeping the Geometry-only Baseline as the primary "fail-safe".
+- $S_{final} = S_{base} + \Delta S$
+- If $\Delta S$ (Deep Learning Adjustment) is noisy or the CNN input is invalid, it decays to 0, ensuring the system performance never falls below the validated baseline (F1 = 0.5422).

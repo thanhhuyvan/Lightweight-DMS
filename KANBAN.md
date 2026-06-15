@@ -3,45 +3,48 @@
 ---
 
 ## 🔵 Module 1: Data Engineering (Data Squad)
-*Goal: Generate the Hybrid Dataset (CSV + Image Patches).*
+*Goal: Prepare the Multimodal Dataset (Syncing Math + Image Patches).*
 
 | ID | Task | Status | Assignee |
 | :--- | :--- | :---: | :--- |
-| **D-01** | Implement **Isotropic Padding** in image extraction. | Todo | |
-| **D-02** | Update `Mesh_apply.py` with 6-anchor **solvePnP**. | Done | |
-| **D-03** | Script to generate **10s Sliding Windows** (Sequences). | In Progress | |
-| **D-04** | Build **HybridDataLoader** (syncing CSV rows with images). | Todo | |
+| **D-01.1** | Create `patch_extractor.py` to define eye/mouth BBoxes from landmarks. | Todo | |
+| **D-01.2** | Implement **Isotropic Padding** logic (1:1 aspect ratio) with black pixels. | Todo | |
+| **D-01.3** | Implement grayscale conversion and $24 \times 24$ patch resizing. | Todo | |
+| **D-01.4** | Batch process all frames to `frame/patches/`. | Todo | |
+| **D-04.1** | Build `HybridDataset` class to sync CSV rows with Image Patches. | Todo | |
 
 ## 🔴 Module 2: Model Architecture (Model Squad)
 *Goal: Build the FiLM-CNN-GRU Network.*
 
 | ID | Task | Status | Assignee |
-| :--- | :---: | :---: | :--- |
-| **M-01** | Setup **MobileNetV3-Small** backbone for $24 \times 24$ patches. | Todo | |
-| **M-02** | Implement **FiLM Layer** (MLP + Modulation). | Todo | |
-| **M-03** | Implement **Gated GRU** with [MASK] embedding. | Todo | |
-| **M-04** | Integrate **Residual Fallback** layer ($S = Base + \Delta S$). | Todo | |
+| :--- | :--- | :---: | :--- |
+| **M-01.1** | Setup **MobileNetV3-Small** backbone with 1-channel input modification. | Todo | |
+| **M-02.1** | Build **MLP Generator** (Input: 12D Geo Vector -> Output: $\gamma, \beta$). | Todo | |
+| **M-02.2** | Implement **FiLM Modulation Layer** in PyTorch. | Todo | |
+| **M-03.1** | Setup **GRU Sequential Layer** with hidden state persistence. | Todo | |
+| **M-04.1** | Implement **Residual Fallback Logic** ($S_{final} = S_{base} + \Delta S$). | Todo | |
 
 ## 🟡 Module 3: Advanced Training (F1 Squad)
 *Goal: Maximize F1-Score via Contrastive Learning.*
 
 | ID | Task | Status | Assignee |
 | :--- | :--- | :---: | :--- |
-| **T-01** | Implement **Triplet Loss** module for PyTorch. | Todo | |
-| **T-02** | Setup **Class-Weighted Attention** mechanism. | Todo | |
-| **T-03** | Run **GroupKFold** cross-validation on Hybrid model. | Todo | |
+| **T-01.1** | Implement **TripletMarginLoss** with Hard Negative Mining. | Todo | |
+| **T-02.1** | Setup **Class-Weighted Attention** for temporal weighting. | Todo | |
+| **T-03.1** | Run **GroupKFold** (5 folds) with F1-Macro monitoring. | Todo | |
 
-## 🟢 Module 4: Benchmarking (Leader)
-*Goal: Final evaluation and paper charts.*
+## 🟢 Module 4: Benchmarking & Visualization (Leader)
+*Goal: Academic reporting and validation.*
 
 | ID | Task | Status | Assignee |
 | :--- | :--- | :---: | :--- |
-| **B-01** | Generate **Precision-Recall Curves** (Hybrid vs Base). | Todo | Huy |
-| **B-02** | Measure **Inference Latency** on CPU (ms/frame). | Todo | Huy |
-| **B-03** | Visualize **FiLM Feature Maps** (Geometry influence). | Todo | Huy |
+| **B-01** | Generate **Precision-Recall Curves** (Hybrid vs. Baseline). | Todo | Huy |
+| **B-02** | Measure **Inference Latency** on CPU (Goal: < 20ms). | Todo | Huy |
+| **B-03** | **Qualitative Analysis**: Visualize what the CNN sees after FiLM. | Todo | Huy |
 
 ---
 
-## ✅ Progress Summary
-*   **Baseline (Geometry Only):** F1 = $0.5422$ (XGBoost).
-*   **Target (Hybrid):** F1 > $0.80$.
+## ✅ Completed Milestones
+- [x] **D-02:** Real 3D Head Pose (PnP) integration.
+- [x] **D-03:** 10s Sliding Windows aggregation.
+- [x] **ML-01:** Established 0.5422 F1-Score Geometry Baseline.
