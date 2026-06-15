@@ -1,48 +1,47 @@
-# Lightweight-DMS Task Board (5-Stage Behavioral Architecture)
+# Lightweight-DMS Task Board (Hybrid Evolution)
 
 ---
 
-## 🟢 Phase 1: Computer Vision (Vision Specialist)
-*Goal: Stage 1 - Ensure high-quality frame extraction and accurate landmark/pose data.*
+## 🔵 Module 1: Data Engineering (Data Squad)
+*Goal: Generate the Hybrid Dataset (CSV + Image Patches).*
 
-| Order | Issue | Task Description | Status | Branch |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | **#8** | [Stage 1] Preprocessing (CLAHE) & Face Mesh | ✅ Done | `main` |
-| **2** | **#2** | [Stage 1] Eye & Mouth Landmark Extraction (EAR/MAR) | ✅ Done | `main` |
-| **3** | **#5** | [Stage 1] 3D Model Setup & Core Landmarks | 🚀 In Progress | `feature/pnp-head-pose` |
-| **4** | **#6** | [Stage 1] solvePnP Config & Camera Matrix | 🚀 In Progress | `feature/pnp-head-pose` |
-| **5** | **#7** | [Stage 1] Euler Angles (Yaw, Pitch, Roll) | 📋 Todo | `feature/pnp-head-pose` |
+| ID | Task | Status | Assignee |
+| :--- | :--- | :---: | :--- |
+| **D-01** | Implement **Isotropic Padding** in image extraction. | Todo | |
+| **D-02** | Update `Mesh_apply.py` with 6-anchor **solvePnP**. | Done | |
+| **D-03** | Script to generate **10s Sliding Windows** (Sequences). | In Progress | |
+| **D-04** | Build **HybridDataLoader** (syncing CSV rows with images). | Todo | |
+
+## 🔴 Module 2: Model Architecture (Model Squad)
+*Goal: Build the FiLM-CNN-GRU Network.*
+
+| ID | Task | Status | Assignee |
+| :--- | :---: | :---: | :--- |
+| **M-01** | Setup **MobileNetV3-Small** backbone for $24 \times 24$ patches. | Todo | |
+| **M-02** | Implement **FiLM Layer** (MLP + Modulation). | Todo | |
+| **M-03** | Implement **Gated GRU** with [MASK] embedding. | Todo | |
+| **M-04** | Integrate **Residual Fallback** layer ($S = Base + \Delta S$). | Todo | |
+
+## 🟡 Module 3: Advanced Training (F1 Squad)
+*Goal: Maximize F1-Score via Contrastive Learning.*
+
+| ID | Task | Status | Assignee |
+| :--- | :--- | :---: | :--- |
+| **T-01** | Implement **Triplet Loss** module for PyTorch. | Todo | |
+| **T-02** | Setup **Class-Weighted Attention** mechanism. | Todo | |
+| **T-03** | Run **GroupKFold** cross-validation on Hybrid model. | Todo | |
+
+## 🟢 Module 4: Benchmarking (Leader)
+*Goal: Final evaluation and paper charts.*
+
+| ID | Task | Status | Assignee |
+| :--- | :--- | :---: | :--- |
+| **B-01** | Generate **Precision-Recall Curves** (Hybrid vs Base). | Todo | Huy |
+| **B-02** | Measure **Inference Latency** on CPU (ms/frame). | Todo | Huy |
+| **B-03** | Visualize **FiLM Feature Maps** (Geometry influence). | Todo | Huy |
 
 ---
 
-## 🟡 Phase 2: Data Engineering (Feature Engineer)
-*Goal: Stages 2, 3 & 4 - Signal refinement, Duration logic, and Statistical aggregation.*
-
-| Order | Issue | Task Description | Status | Branch |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | **#1** | [Stage 2] Calibration Alpha (Dynamic Thresholds) | ✅ Done | `main` |
-| **2** | **#13** | [Stage 2] Signal Refinement (Interpolation & Smoothing) | ✅ Done | `main` |
-| **3** | **#21** | [Stage 3] Duration Logic (Blinks vs. Micro-sleeps) | 📋 Todo | `feature/duration-logic` |
-| **4** | **#4** | [Stage 4] Statistical Aggregation (60s Sliding Window) | 🚀 In Progress | `feature/perclos-stats` |
-| **5** | **#9** | [Stage 4] Contextual Fusion (EAR + Head Pose) | 📋 Todo | `feature/contextual-fusion` |
-| **6** | **#10** | [Stage 4] Behavioral Safety Filter (Post-processing) | 📋 Todo | `main` |
-
----
-
-## 🔵 Phase 3: Machine Learning (ML Lead)
-*Goal: Stage 5 - Behavioral Classification and System Integration.*
-
-| Order | Issue | Task Description | Status | Branch |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | **#14** | [Stage 5] Participant-Based Data Splitting (GroupKFold) | 🚀 In Progress | `main` |
-| **2** | **#22** | [Stage 5] Dataset Partitioning (Train/Val/Test) | 📋 Todo | `main` |
-| **3** | **#15** | [Stage 5] Train Behavioral Random Forest Classifier | 🚀 In Progress | `feature/ML-04-behavioral` |
-| **4** | **#16** | [DEP-01] Real-time Pipeline Integration | 📋 Todo | `main` |
-
----
-
-## ✅ Legend
-- **Order**: Follow this sequence strictly to maintain Stage dependencies.
-- **Done**: Merged into `main`.
-- **In Progress**: Coding currently happening.
-- **Todo**: Waiting for the previous step to finish.
+## ✅ Progress Summary
+*   **Baseline (Geometry Only):** F1 = $0.5422$ (XGBoost).
+*   **Target (Hybrid):** F1 > $0.80$.

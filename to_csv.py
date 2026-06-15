@@ -27,7 +27,7 @@ def process_features(df):
         
         # 2. Refined Interpolation (FD-05)
         # Using polynomial order 2 for smoother transitions than linear
-        cols_to_fix = ['mean_EAR', 'MAR', 'head_dx', 'head_dy']
+        cols_to_fix = ['mean_EAR', 'MAR', 'pitch', 'yaw', 'roll']
         for col in cols_to_fix:
             if col in group.columns:
                 # Polynomial interpolation (order 2) is smoother for biological signals
@@ -70,7 +70,7 @@ def main():
         return
 
     base_cols = ['video_id', 'participant_id', 'frame_file', 'face_detected']
-    feature_cols = ['mean_EAR', 'MAR', 'head_dx', 'head_dy']
+    feature_cols = ['mean_EAR', 'MAR', 'pitch', 'yaw', 'roll']
     
     # detection_method was added in FD-03/06
     optional_cols = ['detection_method']

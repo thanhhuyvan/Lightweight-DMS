@@ -1,92 +1,52 @@
-# Methodology: Lightweight Drowsiness Detection System
+# Technical Specification: Robust Hybrid Framework with Residual Fallback
 
-This document provides a detailed technical explanation of the methodologies, formulas, and algorithms used in the Lightweight-DMS project.
-
----
-
-## 1. Pipeline Overview: The 5-Stage Architecture
-The system follows a modular, feed-forward architecture designed to transform raw pixels into high-level physiological insights:
-
-1.  **Stage 1: Computer Vision & Preprocessing**: Enhancing raw video and extracting geometric landmarks.
-2.  **Stage 2: Data Engineering & Signal Refinement**: Cleaning noise and calibrating individual baselines.
-3.  **Stage 3: Duration Logic & Behavioral Stats**: Extracting frame-level behavioral indicators (e.g., micro-sleeps vs. blinks).
-4.  **Stage 4: Statistical Aggregation (Sliding Window)**: Compiling temporal vectors over 60-second intervals.
-5.  **Stage 5: Machine Learning Classification**: Using behavioral patterns to predict the final drowsiness state.
+## 1. Core Architecture Philosophy
+The system is built on a **"Safety-First"** principle. We use deterministic 3D geometry as a reliable baseline and Deep Learning as a high-precision refinement layer. The goal is to maximize **F1-Score** by reducing inter-participant variance.
 
 ---
 
-## 2. Phase 1: Computer Vision & Preprocessing
+## 2. Detailed Pipeline Stages
 
-### 2.1. Frame Extraction & Enhancement
-*   **Sampling**: Videos are processed at **4 FPS** to balance temporal resolution with computational efficiency.
-*   **Enhancement (CLAHE)**: Contrast Limited Adaptive Histogram Equalization is applied to normalize lighting conditions.
-    *   *Clip Limit*: 2.0 | *Tile Grid*: 8x8
+### Stage 1: Dual-Stream Feature Extraction
+**Developer's Mission:** Prepare high-quality, normalized "food" for the models.
 
-### 2.2. Geometric Feature Extraction
-We use **MediaPipe Face Mesh** (468 3D landmarks) to calculate:
-*   **Eye Aspect Ratio (EAR)**: $EAR = \frac{\|P_2 - P_6\| + \|P_3 - P_5\|}{2 \|P_1 - P_4\|}$
-*   **Mouth Aspect Ratio (MAR)**: Used to detect yawning.
-*   **Head Pose (solvePnP)**: Euler angles (Yaw, Pitch, Roll) mapped to a generic 3D face model.
+*   **Branch A (Geometric Math):** 
+    *   **solvePnP Head Pose:** Use 6 anchors (Nose 1, Chin 152, L-Eye 33, R-Eye 263, L-Mouth 61, R-Mouth 291). *Purpose:* Get actual angles to compensate for head tilts.
+    *   **Asymmetry EAR:** $|EAR_{left} - EAR_{right}|$. *Purpose:* Detect one-sided eyelid drooping, a strong sign of fatigue.
+    *   **Continuous Min-Max:** For every 10s window, find the max/min EAR and scale values to $[0, 1]$. *Purpose:* A "small eye" driver and a "big eye" driver will look identical to the model.
+*   **Branch B (Isotropic Patches):** 
+    *   **Square Padding:** If an eye patch is $40 \times 20$, add 10px black padding top/bottom to make it $40 \times 40$. *Purpose:* Prevents the "squashed eye" effect when resizing, which confuses CNNs.
 
----
+### Stage 2: Feature-Level Modulation (FiLM)
+**Developer's Mission:** Allow the "brain" (Math) to tell the "eyes" (CNN) what to look for.
 
-## 3. Phase 2: Data Engineering & Calibration
+*   **Mechanism:** Use a 2-layer MLP to turn the Geometry Vector (Pose + EAR) into $\gamma$ and $\beta$.
+*   **Fusion:** Multiply/Add these values into the MobileNet feature maps.
+*   *Why?* If the head is turned (Yaw), the math tells the CNN: "The eye looks smaller because of the angle, don't trigger a false alarm."
 
-### 3.1. Signal Refinement
-*   **Interpolation**: Polynomial interpolation (Order 2) handles gaps up to 1 second (4 frames) to maintain signal continuity.
-*   **Smoothing**: A **Savitzky-Golay filter** (Window=5, Order=2) removes high-frequency jitter while preserving the depth of blinks.
+### Stage 3: Gated GRU & Temporal Attention
+**Developer's Mission:** Handle the "messy reality" of driving (occlusions/lost tracking).
 
-### 3.2. Dynamic Calibration (Personalization)
-*   **Baseline**: The first 5 seconds of the video establish the user's "awake" state.
-*   **Threshold ($\alpha$)**: $\alpha = 0.75 \times \text{85th percentile of EAR_{awake}}$.
-*   **Physical State**: A frame is marked as "Closed" ($eye\_state=1$) if $EAR < \alpha$.
+*   **Confidence Gating:** If MediaPipe confidence $< 0.4$, switch input to a [MASK] vector. The GRU will use its "memory" to predict the state for up to 2 seconds.
+*   **Class-Weight Attention:** Penalize the model more for missing a "Drowsy" frame than an "Alert" frame. This directly boosts **Recall** and **F1-Score**.
 
----
+### Stage 4: Contrastive Training (Triplet Loss)
+**Developer's Mission:** Force the model to see the "gap" between tired and awake.
 
-## 4. Ground Truth & Labeling Strategy
+*   **Triplet Logic:** (Anchor: Low Vigilant, Positive: Drowsy, Negative: Alert).
+*   **Goal:** In the embedding space, "Tired" states must cluster together, far away from "Alert".
 
-We distinguish between **Physical States** (deterministic) and **Physiological States** (behavioral):
+### Stage 5: Residual Fallback (The Safety Net)
+**Developer's Mission:** Ensure we NEVER perform worse than our current $0.5422$ F1-Score.
 
-### 4.1. Frame-level State (Physical)
-*   **Status**: `eye_state` (0: Open, 1: Closed).
-*   **Role**: A raw signal feature, **not** an ML target.
-
-### 4.2. Video-level Ground Truth (Physiological)
-*   **Target (Label)**: Derived from dataset source.
-*   **Levels**: `0` (Alert), `5` (Drowsy), `10` (Sleeping).
-*   **Role**: The primary goal for Machine Learning classification.
+*   **Formula:** $Final\_Score = XGBoost(Geometry) + \Delta S(Deep\_Learning)$.
+*   **Constraint:** Limit $\Delta S$ to $\pm 0.15$ via a Tanh activation.
+*   *Benefit:* If the CNN is blinded by a headlight, $\Delta S$ goes to 0, and the system relies 100% on the stable Math baseline.
 
 ---
 
-## 5. Phase 3: Machine Learning & Behavioral Analysis
-
-### 5.1. Shifting to Behavioral Classification
-To avoid "circular logic," the model does not predict if an eye is closed. Instead, it classifies the driver's drowsiness level by analyzing **patterns of movement** over time.
-
-### 5.2. Statistical Aggregation (60s Sliding Window)
-We aggregate data into vectors to capture trends:
-*   **PERCLOS**: Percentage of time eyes are closed ($eye\_state=1$).
-*   **Blink Frequency**: Number of state transitions per minute.
-*   **EAR Variance**: Standard deviation of EAR (indicates stability of gaze).
-*   **Pose Stability Index**: Variance in Pitch/Yaw to detect "nodding off."
-
-### 5.3. Model: Behavioral Classifier (Random Forest)
-*   **Input**: Aggregated temporal vectors.
-*   **Logic**: The model distinguishes an Alert driver (who blinks frequently but briefly) from a Drowsy driver (who has prolonged closures and erratic head movements).
-*   **Validation**: **GroupKFold** (Participant-based) to ensure the model generalizes to new faces.
-
----
-
-## 6. System Robustness: The 4 Protective Layers
-
-1.  **Signal Integrity Layer**: Uses interpolation to prevent face-loss from corrupting temporal statistics.
-2.  **Duration Logic Layer**: Pre-filters data by separating biological blinks from physiological drowsiness at the processing level.
-3.  **Temporal Persistence Layer**: 60s windows prevent "flickering" alerts caused by momentary noise.
-4.  **Contextual Fusion Layer**: Cross-verifies EAR signals with Head Pose data to increase detection confidence.
-
----
-
-## 7. Architectural Standards
-*   **Cross-Platform**: Strict use of `pathlib` and `src/core_config.py`.
-*   **Reproducibility**: Global seed set to 42.
-*   **Traceability**: All pipeline steps logged in `logs/` with detailed durations.
+## 3. Data Flow Summary (For Implementation)
+1.  `Input`: 10-15 FPS IR Video.
+2.  `Output 1`: 12D Geometry Vector (from solvePnP + EAR + MAR).
+3.  `Output 2`: $24 \times 24$ Gray Square Patches (L-Eye, R-Eye, Mouth).
+4.  `Output 3`: Final 3-class probability $[P_{alert}, P_{low}, P_{drowsy}]$.

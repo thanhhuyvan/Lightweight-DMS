@@ -50,17 +50,46 @@ def mouth_aspect_ratio(landmarks, img_w, img_h):
     horiz = euclidean(left, right)
     return vert / (horiz + 1e-6)
 
-def head_pose_proxy(landmarks, img_w, img_h):
-    xs = [lm.x * img_w for lm in landmarks]
-    ys = [lm.y * img_h for lm in landmarks]
-    cx, cy = np.mean(xs), np.mean(ys)
-    face_w = max(xs) - min(xs)
-    face_h = max(ys) - min(ys)
-    nose   = landmarks[NOSE_TIP_IDX]
-    nx, ny = nose.x * img_w, nose.y * img_h
-    dx = (nx - cx) / (face_w + 1e-6)
-    dy = (ny - cy) / (face_h + 1e-6)
-    return dx, dy
+def get_head_pose(landmarks, img_w, img_h):
+    """
+    Estimates Pitch, Yaw, and Roll using solvePnP.
+    """
+    model_points = np.array([
+        (0.0, 0.0, 0.0),             # Nose tip
+        (0.0, -330.0, -65.0),        # Chin
+        (-225.0, 170.0, -135.0),     # Left eye left corner
+        (225.0, 170.0, -135.0),      # Right eye right corner
+        (-150.0, -150.0, -125.0),    # Left Mouth corner
+        (150.0, -150.0, -125.0)      # Right mouth corner
+    ], dtype=np.float32)
+
+    image_points = np.array([
+        (landmarks[1].x * img_w, landmarks[1].y * img_h),
+        (landmarks[152].x * img_w, landmarks[152].y * img_h),
+        (landmarks[33].x * img_w, landmarks[33].y * img_h),
+        (landmarks[263].x * img_w, landmarks[263].y * img_h),
+        (landmarks[61].x * img_w, landmarks[61].y * img_h),
+        (landmarks[291].x * img_w, landmarks[291].y * img_h)
+    ], dtype=np.float32)
+
+    focal_length = img_w
+    center = (img_w / 2, img_h / 2)
+    camera_matrix = np.array([
+        [focal_length, 0, center[0]],
+        [0, focal_length, center[1]],
+        [0, 0, 1]
+    ], dtype=np.float32)
+    dist_coeffs = np.zeros((4, 1))
+
+    success, rot_vec, _ = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+    if not success: return 0.0, 0.0, 0.0
+
+    rmat, _ = cv2.Rodrigues(rot_vec)
+    pitch = math.asin(-rmat[1, 2])
+    yaw = math.atan2(rmat[0, 2], rmat[2, 2])
+    roll = math.atan2(rmat[1, 0], rmat[1, 1])
+
+    return math.degrees(pitch), math.degrees(yaw), math.degrees(roll)
 
 def imread_unicode(path):
     try:
@@ -105,9 +134,7 @@ def draw_custom_mesh(img, landmarks, w, h):
     return annotated
 
 def create_landmarker(confidence=0.4):
-    # Model setup
     src_model_path = MODEL_PATH
-    # Copy to temp to avoid issues with unicode paths in MediaPipe
     ascii_model_path = os.path.join(tempfile.gettempdir(), 'face_landmarker.task')
     if not os.path.exists(ascii_model_path):
         shutil.copy(str(src_model_path), ascii_model_path)
@@ -131,7 +158,6 @@ def main():
 
     records = []
     
-    # We use two landmarkers: one strict and one loose (Retry Logic)
     with create_landmarker(confidence=0.4) as landmarker_strict, \
          create_landmarker(confidence=0.15) as landmarker_loose:
          
@@ -150,11 +176,9 @@ def main():
             img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
             
-            # Step 1: Strict Detection
             results = landmarker_strict.detect(mp_image)
             method = 'strict'
             
-            # Step 2: Retry with Loose Threshold if failed (FD-03)
             if not results.face_landmarks:
                 results = landmarker_loose.detect(mp_image)
                 method = 'loose' if results.face_landmarks else 'failed'
@@ -164,28 +188,23 @@ def main():
                 'participant_id': participant_id, 
                 'frame_file': p.name,
                 'face_detected': False, 
-                'detection_method': method, # FD-06
+                'detection_method': method,
                 'EAR_left': np.nan,
                 'EAR_right': np.nan,
                 'mean_EAR': np.nan, 
                 'MAR': np.nan,
-                'head_dx': np.nan,
-                'head_dy': np.nan
+                'pitch': np.nan,
+                'yaw': np.nan,
+                'roll': np.nan
             }
 
             if results.face_landmarks:
                 face_lms = results.face_landmarks[0]
                 
-                # Save landmarks
-                for i, lm in enumerate(face_lms):
-                    row[f'lm_{i}_x'] = round(lm.x, 6)
-                    row[f'lm_{i}_y'] = round(lm.y, 6)
-                    row[f'lm_{i}_z'] = round(lm.z, 6)
-
                 left_ear  = eye_aspect_ratio(face_lms, LEFT_EYE_IDXS,  w, h)
                 right_ear = eye_aspect_ratio(face_lms, RIGHT_EYE_IDXS, w, h)
                 mar       = mouth_aspect_ratio(face_lms, w, h)
-                dx, dy    = head_pose_proxy(face_lms, w, h)
+                pitch, yaw, roll = get_head_pose(face_lms, w, h)
                 mean_ear  = (left_ear + right_ear) / 2
 
                 row.update({
@@ -194,13 +213,14 @@ def main():
                     'EAR_right': round(right_ear, 5),
                     'mean_EAR': round(mean_ear, 5),
                     'MAR': round(mar, 5),
-                    'head_dx': round(dx, 5),
-                    'head_dy': round(dy, 5),
+                    'pitch': round(pitch, 2),
+                    'yaw': round(yaw, 2),
+                    'roll': round(roll, 2),
                 })
 
                 annotated = draw_custom_mesh(img_bgr, face_lms, w, h)
                 color = (0, 255, 0) if method == 'strict' else (0, 255, 255)
-                cv2.putText(annotated, f'EAR:{mean_ear:.3f} ({method})', (10, 30), 
+                cv2.putText(annotated, f'P:{pitch:.1f} Y:{yaw:.1f} ({method})', (10, 30), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
                 imwrite_unicode(out_path, annotated, quality=90)
             else:

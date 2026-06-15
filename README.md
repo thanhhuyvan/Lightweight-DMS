@@ -1,44 +1,27 @@
-# Lightweight Driver Monitoring System (DMS)
+# Lightweight-DMS: Hybrid Driver Monitoring System
 
-![System Architecture](image/diagram.png)
-![Task Flow Roadmap](image/task-flow.png)
+A high-performance, multi-stage hybrid monitoring pipeline designed for real-time drowsiness detection on edge devices.
 
-## Team Collaboration
-- **Task & Branch Mapping**: Check [KANBAN.md](./KANBAN.md) to see which branch you should use for your assigned task.
-- **Rules**: 
-    - Never push directly to `main`. 
-    - Create a feature branch following the `feature/ID-description` format.
-    - Submit a Pull Request for review.
+## 🚀 Project Vision
+To bridge the gap between deterministic geometric math and stochastic deep learning, ensuring robust detection in real-world driving environments.
 
-## Pro-Tips
-- **Using AI**: If you are using an AI assistant, tell it:
-  "Read the GEMINI.md, MASTER_PLAN.md, and KANBAN.md files first to understand our project structure and rules."
-**Sequence workflow**
-   1. src/core_config.py (The Map)
-   * Why: This is the "single source of truth" for paths. You need to know exactly where SUMMARY_FEATURES_CSV is located
-     and where to define a new path for your saved model (e.g., MODEL_SAVE_PATH).
+## 🏗️ Architecture: Robust Hybrid Framework
+The system leverages a **Residual Fallback** strategy to ensure industrial-grade reliability:
+1.  **Branch A (Geometry):** MediaPipe + 3D solvePnP + Asymmetric EAR (Stable Backbone).
+2.  **Branch B (Appearance):** Landmark-guided Isotropic Patches + MobileNetV3 (Visual Detail).
+3.  **Fusion:** Feature-level Linear Modulation (FiLM) + Gated GRU.
+4.  **Safety Net:** Residual adjustment $\Delta S$ preserves a guaranteed **Baseline F1-Score of 0.5422**.
 
-   2. frame/csv/features_summary.csv (The Data)
-   * Why: Read the header (first few lines). This is your training set. You need to identify your Features (e.g.,
-     mean_EAR_smooth, MAR_smooth, head_dx_smooth) and your Target (likely eye_state).
+## 📊 Current Status
+- **Baseline (Geometry Only):** F1 = $0.5422$ (XGBoost, GroupKFold validated).
+- **In Development:** Hybrid CNN-GRU integration with FiLM modulation.
 
-   3. to_csv.py (The Feature Logic)
-   * Why: Understand how the "smooth" columns were calculated (Savitzky-Golay filter). This ensures you understand the
-     signal quality and why you should prefer _smooth columns over raw ones.
+## 🛠️ Tech Stack
+- **Vision:** MediaPipe, OpenCV, solvePnP.
+- **Learning:** XGBoost (Baseline), PyTorch (Hybrid).
+- **Optimization:** Savitzky-Golay filtering, Isotropic Padding, Min-Max Scaling.
 
-  4. src/eye_state.py (The Label Logic)
-   * Why: This script generates the eye_state column (0 for open, 1 for closed). Since you are training a model, you
-     need to know exactly how your "ground truth" labels were derived.
-
-   5. KANBAN.md & MASTER_PLAN.md (The Rules)
-   * Why:
-       * ML-03 Dependency: The Kanban mentions that data splitting must be Participant-Based (GroupKFold). You cannot
-         just do a random split, or you will leak participant data.
-       * Workflow: Check the "Git Workflow" in MASTER_PLAN.md to ensure you create the correct branch (e.g.,
-         feature/ML-04-random-forest) before you start.
-
-   6. main.py (The Integration)
-   * Why: See how steps are added to the steps list. Your final training script will eventually need to be registered
-     here.
----
-**Data Source**: [Google Drive CSV Folder](https://drive.google.com/drive/folders/1WuRqUJwTGjcF9nzPSVg-F7JMZeJ3gdkG?usp=sharing)
+## 📖 Documentation
+- [METHODOLOGY.md](./METHODOLOGY.md) - Full technical specification.
+- [KANBAN.md](./KANBAN.md) - Real-time task tracking.
+- [MEMBER_GUIDE.md](./MEMBER_GUIDE.md) - Onboarding and squad structure.
