@@ -22,7 +22,7 @@ from src.core_config import SUMMARY_FEATURES_CSV, CSV_DIR, TARGET_FPS
 # ══════════════════════════════════════════════════════════════
 # Configuration
 # ══════════════════════════════════════════════════════════════
-WINDOW_SECONDS = 10                         # 10-second sliding window
+WINDOW_SECONDS = 5                         # 10-second sliding window
 WINDOW_SIZE    = WINDOW_SECONDS * TARGET_FPS  # 40 frames
 STRIDE_SECONDS = 1                          # 1-second stride
 STRIDE_FRAMES  = STRIDE_SECONDS * TARGET_FPS  # 4 frames
