@@ -146,12 +146,17 @@ cython_debug/
 .vscode/
 
 # Project Specifics
+research/
+stage0_extraction/__pycache__/
 frame/frames_raw/
+frame/patches/
 frame/frames_clahe/
 frame/frames_mesh/
 frame/csv/landmarks.csv
 frame/csv/landmarks_full.csv
 frame/csv/calibration_params.csv
+frame/csv/behavioral_vectors.csv
+frame/failed_detections.zip
 logs/
 report/
 video/

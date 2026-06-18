@@ -7,21 +7,21 @@
 
 | ID | Task | Status | Assignee |
 | :--- | :--- | :---: | :--- |
-| **D-01.1** | Create `patch_extractor.py` to define eye/mouth BBoxes from landmarks. | Todo | |
-| **D-01.2** | Implement **Isotropic Padding** logic (1:1 aspect ratio) with black pixels. | Todo | |
-| **D-01.3** | Implement grayscale conversion and $24 \times 24$ patch resizing. | Todo | |
-| **D-01.4** | Batch process all frames to `frame/patches/`. | Todo | |
-| **D-04.1** | Build `HybridDataset` class to sync CSV rows with Image Patches. | Todo | |
+| **D-01.1** | Create `patch_extractor.py` to define eye/mouth BBoxes from landmarks. | Done | |
+| **D-01.2** | Implement **Isotropic Padding** logic (1:1 aspect ratio) with black pixels. | Done | |
+| **D-01.3** | Implement grayscale conversion and $24 \times 24$ patch resizing. | Done | |
+| **D-01.4** | Batch process all frames to `frame/patches/`. | Done | |
+| **D-04.1** | Build `HybridDataset` class to sync CSV rows with Image Patches. | Done | |
 
 ## 🔴 Module 2: Model Architecture (Model Squad)
 *Goal: Build the FiLM-CNN-GRU Network.*
 
 | ID | Task | Status | Assignee |
 | :--- | :--- | :---: | :--- |
-| **M-01.1** | Setup **MobileNetV3-Small** backbone with 1-channel input modification. | Todo | |
-| **M-02.1** | Build **MLP Generator** (Input: 12D Geo Vector -> Output: $\gamma, \beta$). | Todo | |
-| **M-02.2** | Implement **FiLM Modulation Layer** in PyTorch. | Todo | |
-| **M-03.1** | Setup **GRU Sequential Layer** with hidden state persistence. | Todo | |
+| **M-01.1** | Setup **MobileNetV3-Small** backbone with 1-channel input modification. | Done | |
+| **M-02.1** | Build **MLP Generator** (Input: 12D Geo Vector -> Output: $\gamma, \beta$). | Done | |
+| **M-02.2** | Implement **FiLM Modulation Layer** in PyTorch. | Done | |
+| **M-03.1** | Setup **GRU Sequential Layer** with hidden state persistence. | Done | |
 | **M-04.1** | Implement **Residual Fallback Logic** ($S_{final} = S_{base} + \Delta S$). | Todo | |
 
 ## 🟡 Module 3: Advanced Training (F1 Squad)

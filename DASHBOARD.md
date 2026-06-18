@@ -14,6 +14,7 @@
 
 ## 📅 Milestones
 - [x] **MS-01:** Establish 0.5422 Geometry Baseline.
-- [ ] **MS-02:** Complete Patch Extraction with Isotropic Padding.
-- [ ] **MS-03:** Achieve F1 > 0.70 with CNN-Geometry Fusion.
-- [ ] **MS-04:** Final Hybrid Model with F1 > 0.80.
+- [x] **MS-02:** Complete Patch Extraction with Isotropic Padding.
+- [x] **MS-03:** Integrate FiLM Core and Hybrid Sequence Dataset.
+- [ ] **MS-04:** Achieve F1 > 0.70 with CNN-Geometry Fusion.
+- [ ] **MS-05:** Final Hybrid Model with F1 > 0.80.
