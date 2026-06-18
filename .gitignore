@@ -146,7 +146,11 @@ cython_debug/
 .vscode/
 
 # Project Specifics
-research/
+# research/ (Unignored to allow pushing scripts)
+research/data/
+research/logs/
+research/models/
+research/__pycache__/
 stage0_extraction/__pycache__/
 frame/frames_raw/
 frame/patches/
