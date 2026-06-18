@@ -160,6 +160,7 @@ frame/csv/landmarks.csv
 frame/csv/landmarks_full.csv
 frame/csv/calibration_params.csv
 frame/csv/behavioral_vectors.csv
+frame/failed_detections/
 frame/failed_detections.zip
 logs/
 report/
