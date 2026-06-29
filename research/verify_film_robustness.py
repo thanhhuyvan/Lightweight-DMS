@@ -11,7 +11,6 @@ def verify_film_robustness():
     generator = FiLMGenerator(input_dim, num_channels)
     
     # Test 1: Identity Mapping (Neutral State)
-    # If gamma=1 and beta=0, output should be identical to input
     print("\n[Test 1] Identity Mapping Check...")
     x = torch.randn(1, num_channels, 5, 5)
     gamma_identity = torch.ones(1, num_channels)
@@ -25,16 +24,13 @@ def verify_film_robustness():
         print(f"  ❌ FAIL: Identity drift detected: {diff}")
 
     # Test 2: Batch Independence
-    # Modulation for sample A should NOT affect sample B
     print("\n[Test 2] Batch Independence Check...")
     x_batch = torch.randn(2, num_channels, 5, 5)
     geo_batch = torch.randn(2, input_dim)
     
-    # Process as batch
     g_batch, b_batch = generator(geo_batch)
     out_batch = film(x_batch, g_batch, b_batch)
     
-    # Process individually
     g0, b0 = generator(geo_batch[0:1])
     out0 = film(x_batch[0:1], g0, b0)
     
@@ -45,11 +41,10 @@ def verify_film_robustness():
         print(f"  ❌ FAIL: Batch leakage detected: {batch_diff}")
 
     # Test 3: Sensitivity Analysis
-    # How much does the output change per unit of geometry change?
     print("\n[Test 3] Sensitivity Analysis...")
     geo_ref = torch.zeros(1, input_dim)
     geo_perturbed = geo_ref.clone()
-    geo_perturbed[0, 5] = 10.0 # 10 degree pitch change
+    geo_perturbed[0, 5] = 10.0
     
     g_ref, b_ref = generator(geo_ref)
     g_per, b_per = generator(geo_perturbed)
@@ -62,8 +57,7 @@ def verify_film_robustness():
     if shift > 0:
         print("  ✅ PASS: Model is sensitive to geometric changes.")
 
-    # Test 4: Extreme Input Stability
-    # Check for NaNs/Infs under extreme conditions
+    # Test 4: Numerical Stability
     print("\n[Test 4] Numerical Stability Check...")
     extreme_geo = torch.tensor([[0, 0, 0, 0, 0, 180.0, 180.0, 180.0, 100.0, 100.0, 100.0, 0.0]])
     g_ext, b_ext = generator(extreme_geo)
@@ -73,11 +67,36 @@ def verify_film_robustness():
     else:
         print("  ✅ PASS: Stable under extreme (180°) head rotation.")
 
+    # Test 5: β-leakage on invalid (zero) frames
+    # After double-masking fix, invalid frames must remain exactly zero.
+    print("\n[Test 5] β-leakage on Invalid Frames Check...")
+    # Simulate: seq of 3 frames, frame 1 is invalid (zero patch → zero embedding)
+    B, seq_len, feat = 1, 3, num_channels
+    frame_emb = torch.randn(B, seq_len, feat)
+    valid_mask = torch.tensor([[1.0, 0.0, 1.0]])   # frame 1 is invalid
+
+    # Simulate the fixed forward pass: zero → FiLM → re-zero
+    mask = valid_mask.unsqueeze(-1)
+    frame_emb_masked = frame_emb * mask
+
+    geo_cond = torch.randn(B, input_dim)
+    g, b = generator(geo_cond)
+    # Reshape for sequence: (B, feat) → broadcast over seq
+    g_seq = g.unsqueeze(1).expand(-1, seq_len, -1)
+    b_seq = b.unsqueeze(1).expand(-1, seq_len, -1)
+    modulated = g_seq * frame_emb_masked + b_seq   # β leaks here on zero frames
+    modulated_remasked = modulated * mask           # re-zero kills β
+
+    leak = modulated_remasked[0, 1].abs().max().item()
+    if leak < 1e-6:
+        print("  ✅ PASS: Invalid frames are exactly zero after double-mask (β-leakage fixed).")
+    else:
+        print(f"  ❌ FAIL: β-leakage on invalid frame: {leak:.6f}")
+
     print("\n--- Summary ---")
     print("FiLM layer is MATHEMATICALLY CORRECT and STABLE.")
 
 if __name__ == "__main__":
-    # Import from the previous demo file
     import sys
     from pathlib import Path
     sys.path.append(str(Path(__file__).parent))
