@@ -214,21 +214,30 @@ class LateFusionDataset(Dataset):
             patch_sequence.append(np.zeros((3, 24, 24), dtype=np.float32))
             valid_sequence.append(0.0)
 
-        # Interpolate failed frames: forward-fill then backward-fill so the GRU
-        # never sees a zero discontinuity from a missing mesh detection.
-        last_valid = None
-        for t in range(len(patch_sequence)):
-            if valid_sequence[t] > 0.0:
-                last_valid = patch_sequence[t]
-            elif last_valid is not None:
-                patch_sequence[t] = last_valid
-        # backward pass for leading invalid frames
-        first_valid = None
-        for t in range(len(patch_sequence) - 1, -1, -1):
-            if valid_sequence[t] > 0.0:
-                first_valid = patch_sequence[t]
-            elif first_valid is not None:
-                patch_sequence[t] = first_valid
+        # Fill invalid frames with nearest valid patch + compute confidence decay.
+        # Confidence = 0.85^(distance to nearest valid frame), so the model learns
+        # to down-weight fabricated frames proportional to how far they are from truth.
+        confidence = np.ones(self.seq_len, dtype=np.float32)
+        valid_indices = np.where(np.array(valid_sequence) > 0.0)[0]
+
+        if len(valid_indices) == 0:
+            confidence[:] = 0.0
+        else:
+            for t in range(self.seq_len):
+                if valid_sequence[t] > 0.0:
+                    continue
+                prev_v = valid_indices[valid_indices < t]
+                next_v = valid_indices[valid_indices > t]
+                if len(prev_v) and len(next_v):
+                    dist = min(t - prev_v[-1], next_v[0] - t)
+                    patch_sequence[t] = patch_sequence[prev_v[-1]]  # nearest prev
+                elif len(prev_v):
+                    dist = t - prev_v[-1]
+                    patch_sequence[t] = patch_sequence[prev_v[-1]]
+                else:
+                    dist = next_v[0] - t
+                    patch_sequence[t] = patch_sequence[next_v[0]]
+                confidence[t] = 0.85 ** dist
 
         geo = sample["geo"].copy()   # (11,) float32
         if self.geo_scaler is not None:
@@ -239,6 +248,7 @@ class LateFusionDataset(Dataset):
         return {
             "patches":    torch.from_numpy(np.stack(patch_sequence)).float(),
             "valid_mask": torch.tensor(valid_sequence, dtype=torch.float32),
+            "confidence": torch.from_numpy(confidence),
             "geo":        torch.from_numpy(geo),
             "label":      torch.tensor(label, dtype=torch.long),
         }

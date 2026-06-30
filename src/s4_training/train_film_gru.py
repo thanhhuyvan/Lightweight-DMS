@@ -118,6 +118,7 @@ class CachedLateFusionDataset(LateFusionDataset):
                 self.cached_samples.append({
                     "patches": item["patches"],
                     "valid_mask": item["valid_mask"],
+                    "confidence": item["confidence"],
                     "label": item["label"],
                 })
             logging.info("RAM CACHE: Decoded and loaded %d samples in RAM successfully.", n_samples)
@@ -130,6 +131,7 @@ class CachedLateFusionDataset(LateFusionDataset):
         cached = self.cached_samples[idx]
         patches = cached["patches"].clone()
         valid_mask = cached["valid_mask"]
+        confidence = cached["confidence"]
         label = cached["label"]
 
         if self.augment:
@@ -148,6 +150,7 @@ class CachedLateFusionDataset(LateFusionDataset):
         return {
             "patches": patches,
             "valid_mask": valid_mask,
+            "confidence": confidence,
             "geo": torch.from_numpy(geo),
             "label": label,
         }
@@ -297,6 +300,7 @@ class FiLMGRUModel(nn.Module):
         patches:    torch.Tensor,   # (B, seq_len, 3, 24, 24)
         valid_mask: torch.Tensor,   # (B, seq_len)  float 0/1
         geo:        torch.Tensor,   # (B, geo_dim)
+        confidence: torch.Tensor = None,  # (B, seq_len) decay weights, None = no decay
     ) -> torch.Tensor:
         B, seq_len = patches.shape[:2]
 
@@ -322,6 +326,10 @@ class FiLMGRUModel(nn.Module):
             frame_emb = frame_emb * mask
             geo_replicated = geo_cond.unsqueeze(1).expand(-1, seq_len, -1)
             gru_input = torch.cat([frame_emb, geo_replicated], dim=-1)  # (B, seq_len, 96)
+
+        # Apply confidence decay as soft input gate: uncertain frames contribute less
+        if confidence is not None:
+            gru_input = gru_input * confidence.unsqueeze(-1)  # (B, seq_len, 96)
 
         # 5. GRU over the frame sequence
         gru_out, _ = self.gru(gru_input)              # (B, seq_len, gru_hidden)
@@ -398,9 +406,10 @@ def run_epoch(model, loader, criterion, optimizer, device, residual_model=None, 
         valid_mask = batch["valid_mask"].to(device)
         geo        = batch["geo"].to(device)
         y          = batch["label"].to(device)
+        confidence = batch["confidence"].to(device) if "confidence" in batch else None
 
         with torch.set_grad_enabled(optimizer is not None):
-            logits = model(patches, valid_mask, geo)
+            logits = model(patches, valid_mask, geo, confidence)
 
             # Residual fallback: S_final = S_base + Tanh(ΔS) * 0.15
             if residual_model is not None:
