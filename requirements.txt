@@ -7,3 +7,9 @@ mediapipe==0.10.35
 scipy==1.15.1
 pillow==12.2.0
 ipython==9.13.0
+scikit-learn
+xgboost
+seaborn
+tqdm
+torch
+torchvision
