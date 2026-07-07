@@ -118,7 +118,6 @@ class CachedLateFusionDataset(LateFusionDataset):
                 self.cached_samples.append({
                     "patches": item["patches"],
                     "valid_mask": item["valid_mask"],
-                    "confidence": item["confidence"],
                     "label": item["label"],
                 })
             logging.info("RAM CACHE: Decoded and loaded %d samples in RAM successfully.", n_samples)
@@ -131,7 +130,6 @@ class CachedLateFusionDataset(LateFusionDataset):
         cached = self.cached_samples[idx]
         patches = cached["patches"].clone()
         valid_mask = cached["valid_mask"]
-        confidence = cached["confidence"]
         label = cached["label"]
 
         if self.augment:
@@ -150,7 +148,6 @@ class CachedLateFusionDataset(LateFusionDataset):
         return {
             "patches": patches,
             "valid_mask": valid_mask,
-            "confidence": confidence,
             "geo": torch.from_numpy(geo),
             "label": label,
         }
@@ -300,7 +297,6 @@ class FiLMGRUModel(nn.Module):
         patches:    torch.Tensor,   # (B, seq_len, 3, 24, 24)
         valid_mask: torch.Tensor,   # (B, seq_len)  float 0/1
         geo:        torch.Tensor,   # (B, geo_dim)
-        confidence: torch.Tensor = None,  # (B, seq_len) decay weights, None = no decay
     ) -> torch.Tensor:
         B, seq_len = patches.shape[:2]
 
@@ -326,10 +322,6 @@ class FiLMGRUModel(nn.Module):
             frame_emb = frame_emb * mask
             geo_replicated = geo_cond.unsqueeze(1).expand(-1, seq_len, -1)
             gru_input = torch.cat([frame_emb, geo_replicated], dim=-1)  # (B, seq_len, 96)
-
-        # Apply confidence decay as soft input gate: uncertain frames contribute less
-        if confidence is not None:
-            gru_input = gru_input * confidence.unsqueeze(-1)  # (B, seq_len, 96)
 
         # 5. GRU over the frame sequence
         gru_out, _ = self.gru(gru_input)              # (B, seq_len, gru_hidden)
@@ -504,25 +496,22 @@ def train_split(dataset, train_idx, val_idx, args, fold_name):
         {"params": other_params, "lr": args.lr, "weight_decay": args.weight_decay},
     ])
 
-    # OneCycleLR: created after CNN unfreeze (inside the loop at epoch freeze+1).
-    # Cannot be created upfront because frozen epochs must not step it.
+    # OneCycleLR: ramps lr up then anneals — reduces val_f1 bouncing on harder
+    # participants. Activated after CNN unfreeze. Steps per batch inside run_epoch.
     scheduler = None
-    onecycle_ready = False  # flag: scheduler created and ready to step
-
-    # If no freeze, create OneCycleLR immediately (no frozen phase to skip)
-    if args.onecycle and freeze_epochs == 0:
+    if args.onecycle:
+        joint_epochs = args.epochs - freeze_epochs
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
-            max_lr=[args.lr * 0.5, args.lr],
+            max_lr=[args.lr * 0.5, args.lr],   # CNN group gets halved peak lr
             steps_per_epoch=len(train_loader),
-            epochs=args.epochs,
-            pct_start=0.3,
-            div_factor=10.0,
-            final_div_factor=100.0,
+            epochs=joint_epochs,
+            pct_start=0.3,          # 30% warmup, 70% cosine decay
+            div_factor=10.0,        # start_lr = max_lr / 10
+            final_div_factor=100.0, # end_lr   = max_lr / 1000
         )
-        onecycle_ready = True
-        logging.info("%s OneCycleLR created: max_lr=[%.2e, %.2e] over %d epochs",
-                     fold_name, args.lr * 0.5, args.lr, args.epochs)
+        logging.info("%s OneCycleLR enabled: max_lr=[%.2e, %.2e] over %d joint epochs",
+                     fold_name, args.lr * 0.5, args.lr, joint_epochs)
 
     # SWA: average weights over epochs >= swa_start for a flatter, more generalizable
     # minimum. swa_start=12 is data-driven: one epoch after the latest observed
@@ -549,26 +538,11 @@ def train_split(dataset, train_idx, val_idx, args, fold_name):
             for p in model.cnn_encoder.parameters():
                 p.requires_grad = True
             if not args.onecycle:
-                optimizer.param_groups[0]["lr"] = args.lr * 0.5   # CNN group: halved lr
+                optimizer.param_groups[0]["lr"] = args.lr * 0.5
             patience_left = args.patience   # reset: joint fine-tuning is a new phase
             best_f1       = -1.0
             logging.info("%s CNN branch unfrozen at epoch %d (lr → %.2e)",
                          fold_name, epoch, args.lr * 0.5)
-            # Create OneCycleLR NOW after unfreeze — avoids graph reuse during frozen epochs
-            if args.onecycle and not onecycle_ready:
-                joint_epochs = args.epochs - freeze_epochs
-                scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                    optimizer,
-                    max_lr=[args.lr * 0.5, args.lr],
-                    steps_per_epoch=len(train_loader),
-                    epochs=joint_epochs,
-                    pct_start=0.3,
-                    div_factor=10.0,
-                    final_div_factor=100.0,
-                )
-                onecycle_ready = True
-                logging.info("%s OneCycleLR created: max_lr=[%.2e, %.2e] over %d joint epochs",
-                             fold_name, args.lr * 0.5, args.lr, joint_epochs)
 
         # Enter SWA phase: switch to swa_lr, disable early stopping
         if args.swa and epoch == args.swa_start and not in_swa_phase:
@@ -580,12 +554,13 @@ def train_split(dataset, train_idx, val_idx, args, fold_name):
         try:
             if args.augment:
                 dataset.augment = True
+            # Pass scheduler only during joint training phase (not SWA, not frozen phase)
             active_scheduler = scheduler if (not in_swa_phase and epoch > freeze_epochs) else None
             train_m = run_epoch(model, train_loader, criterion, optimizer, device, residual_model, scheduler=active_scheduler)
         finally:
             dataset.augment = False
 
-        # Step SWA
+        # Step schedulers
         if in_swa_phase and swa_model is not None:
             swa_model.update_parameters(model)
             swa_scheduler.step()
@@ -612,10 +587,11 @@ def train_split(dataset, train_idx, val_idx, args, fold_name):
                     logging.info("%s early stopping at epoch %d", fold_name, epoch)
                     break
         else:
+            # SWA phase: no early stopping, track best val metric for reporting
             if val_m["macro_f1"] > best_f1:
                 best_f1, best_metrics = val_m["macro_f1"], val_m
 
-    # After SWA: update BatchNorm stats, save averaged model
+    # After SWA: update BatchNorm stats with training data, save averaged model
     if args.swa and swa_model is not None and in_swa_phase:
         logging.info("%s updating SWA BatchNorm statistics...", fold_name)
         torch.optim.swa_utils.update_bn(train_loader, swa_model, device=device)
@@ -709,31 +685,33 @@ def parse_args():
                    help="List of participant IDs to exclude from the dataset entirely.")
     # OneCycleLR
     p.add_argument("--onecycle",          action="store_true",
-                   help="Use OneCycleLR scheduler instead of fixed lr.")
-    # SWA
+                   help="Use OneCycleLR scheduler instead of fixed lr. Ramps up then anneals.")
+    # SWA (Stochastic Weight Averaging)
     p.add_argument("--swa",               action="store_true",
-                   help="Enable SWA weight averaging after --swa-start epoch.")
+                   help="Enable SWA. Averages weights over epochs >= --swa-start for a flatter, "
+                        "more generalizable minimum.")
     p.add_argument("--swa-start",         type=int,   default=12,
-                   help="Epoch to begin SWA averaging (default=12).")
+                   help="Epoch to begin SWA averaging (default=12, one after latest observed "
+                        "convergence epoch across folds). Early stopping is disabled after this point.")
     p.add_argument("--swa-lr",            type=float, default=1e-4,
-                   help="Constant LR during SWA averaging phase (default=1e-4).")
+                   help="Constant LR used during SWA averaging phase (default=1e-4).")
     return p.parse_args()
 
 
 def main():
-    import sys as _sys
     Path("logs").mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.INFO, 
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler("logs/train_film_gru.log", encoding="utf-8"),
-            logging.StreamHandler(),
+            logging.FileHandler("logs/train_film_gru.log"),
+            logging.StreamHandler()
         ]
     )
     args = parse_args()
 
     # Log exactly what command was run so results are always traceable
+    import sys as _sys
     logging.info("=" * 60)
     logging.info("RUN COMMAND : python %s", " ".join(_sys.argv))
     logging.info("ARGS        : %s", vars(args))

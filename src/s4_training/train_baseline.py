@@ -24,7 +24,7 @@ import joblib
 import logging
 
 # --- Setup Paths ---
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
 CSV_PATH = PROJECT_ROOT / 'frame' / 'csv' / 'behavioral_vectors.csv'
 MODEL_DIR = PROJECT_ROOT / 'models'
 REPORT_DIR = PROJECT_ROOT / 'report'

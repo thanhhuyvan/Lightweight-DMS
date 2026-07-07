@@ -20,7 +20,22 @@ from sklearn.model_selection import GroupKFold
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 
 # --- Setup Paths ---
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
+VECTORS_CSV = PROJECT_ROOT / 'frame' / 'csv' / 'behavioral_vectors.csv'
+FEATURES_CSV = PROJECT_ROOT / 'frame' / 'csv' / 'features_summary.csv'
+MODEL_DIR = PROJECT_ROOT / 'models'
+REPORT_DIR = PROJECT_ROOT / 'report' / 'final'
+MODEL_DIR.mkdir(exist_ok=True)
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%H:%M:%S')
+
+def min_max_scale_group(group):
+    norm_cols = ['EAR_Mean', 'MAR_Mean', 'Blink_Rate', 'Pose_Jitter']
+    for col in norm_cols:
+        if col in group.columns:
+            mi = group[col].min()
+            ma = group[col].max()
 VECTORS_CSV = PROJECT_ROOT / 'frame' / 'csv' / 'behavioral_vectors.csv'
 FEATURES_CSV = PROJECT_ROOT / 'frame' / 'csv' / 'features_summary.csv'
 MODEL_DIR = PROJECT_ROOT / 'models'
@@ -42,7 +57,7 @@ def min_max_scale_group(group):
                 group[f'{col}_Norm'] = 0.5
     return group
 
-def load_clean_and_engineer():
+def load_clean_and_engineer(exclude_participants=None):
     if not VECTORS_CSV.exists():
         logging.error("Behavioral vectors CSV missing.")
         return None
@@ -53,6 +68,10 @@ def load_clean_and_engineer():
     logging.info("Step 1: Filtering for Binary Classification (0 vs 10)...")
     df_binary = df[df['video_id'].isin([0, 10])].copy()
     
+    if exclude_participants:
+        logging.info(f"Excluding participants: {exclude_participants}")
+        df_binary = df_binary[~df_binary['participant_id'].isin(exclude_participants)].copy()
+        
     if df_binary.empty:
         logging.error("No binary data found.")
         return None
@@ -135,7 +154,13 @@ def run_final_training(df):
     plt.savefig(REPORT_DIR / 'binary_feature_importance.png')
 
 def main():
-    df = load_clean_and_engineer()
+    import argparse
+    parser = argparse.ArgumentParser(description="Train baseline XGBoost model with exclusions.")
+    parser.add_argument("--exclude-participants", nargs="+", default=[],
+                        help="List of participant IDs to exclude from the dataset entirely.")
+    args = parser.parse_args()
+
+    df = load_clean_and_engineer(exclude_participants=args.exclude_participants)
     if df is not None:
         run_final_training(df)
 
