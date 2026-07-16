@@ -1,27 +1,125 @@
-# Lightweight-DMS: Hybrid Driver Monitoring System
+# Lightweight-DMS: Vision-Based Driver Drowsiness Detection
 
-A high-performance, multi-stage hybrid monitoring pipeline designed for real-time drowsiness detection on edge devices.
+A lightweight, CPU-deployable Driver Monitoring System using FiLM-conditioned GRU with temporal attention. Achieves **macro F1 = 0.8269** under strict Leave-One-Participant-Out cross-validation.
 
-## 🚀 Project Vision
-To bridge the gap between deterministic geometric math and stochastic deep learning, ensuring robust detection in real-world driving environments.
+![F1 Score](https://img.shields.io/badge/Macro_F1-0.8269-brightgreen)
+![Parameters](https://img.shields.io/badge/Parameters-9%2C347-blue)
+![Latency](https://img.shields.io/badge/Latency-%3C10ms_CPU-orange)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
 
-## 🏗️ Architecture: Robust Hybrid Framework
-The system leverages a **Residual Fallback** strategy to ensure industrial-grade reliability:
-1.  **Branch A (Geometry):** MediaPipe + 3D solvePnP + Asymmetric EAR (Stable Backbone).
-2.  **Branch B (Appearance):** Landmark-guided Isotropic Patches + MobileNetV3 (Visual Detail).
-3.  **Fusion:** Feature-level Linear Modulation (FiLM) + Gated GRU.
-4.  **Safety Net:** Residual adjustment $\Delta S$ preserves a guaranteed **Baseline F1-Score of 0.5422**.
+---
 
-## 📊 Current Status
-- **Baseline (Geometry Only):** F1 = $0.5422$ (XGBoost, GroupKFold validated).
-- **In Development:** Hybrid CNN-GRU integration with FiLM modulation.
+## Demo
 
-## 🛠️ Tech Stack
-- **Vision:** MediaPipe, OpenCV, solvePnP.
-- **Learning:** XGBoost (Baseline), PyTorch (Hybrid).
-- **Optimization:** Savitzky-Golay filtering, Isotropic Padding, Min-Max Scaling.
+Run the real-time webcam demo with live signal graphs:
 
-## 📖 Documentation
-- [METHODOLOGY.md](./METHODOLOGY.md) - Full technical specification.
-- [KANBAN.md](./KANBAN.md) - Real-time task tracking.
-- [MEMBER_GUIDE.md](./MEMBER_GUIDE.md) - Onboarding and squad structure.
+```bash
+python webcam_live_fps.py --demo --model models/film_gru_fold3.pth
+```
+
+Controls:
+| Key | Action |
+|-----|--------|
+| `d` | Toggle live graph panel (EAR / Drowsy Prob / PERCLOS) |
+| `m` | Toggle face mesh overlay |
+| `i` | Toggle eye/mouth patch insets |
+| `f` | Toggle latency profiler |
+| `r` | Recalibrate EAR threshold |
+| `c` | Toggle CLAHE preprocessing |
+| `q` | Quit |
+
+---
+
+## Quick Start
+
+**Requirements:**
+```bash
+pip install torch torchvision mediapipe opencv-python numpy pandas scikit-learn joblib
+```
+
+**Run webcam demo:**
+```bash
+python webcam_live_fps.py --model models/film_gru_fold3.pth --demo
+```
+
+**Run on a video file:**
+```bash
+python docker/predict.py --input video.mp4 --output predictions.csv
+```
+
+---
+
+## Results
+
+**SOTA target: macro F1 > 0.80 ✅ Achieved**
+
+### Ablation Study (5-fold LOPO-CV)
+
+| Model | Mean F1 | Std | Component |
+|---|---|---|---|
+| XGBoost (Geometry Only) | 0.490 | 0.031 | Behavioral geometry baseline |
+| CNN Only (TinyPatchCNN) | 0.742 | 0.263 | Visual patches |
+| Late Fusion (CNN + Geo) | 0.776 | 0.264 | Static multi-modal fusion |
+| Concat+GRU (No FiLM) | 0.810 | 0.180 | Temporal modeling |
+| **FiLM+GRU+Attention** | **0.827** | **0.144** | Geometry conditioning + attention |
+
+### Per-Fold Breakdown (Best Run)
+
+| Held-out | F1 | Drowsy Recall | Notes |
+|---|---|---|---|
+| Participant 2 | 0.872 | 1.000 | Fixed by attention + confidence decay |
+| Participant 4 | 0.923 | 0.969 | Strong |
+| Participant 3 | 0.981 | 0.997 | Near-perfect |
+| Participant 5 | 0.792 | 0.610 | Data diversity issue (N=5 limitation) |
+| Participant 6 | 0.722 | 1.000 | Behavioral inversion documented |
+| **Mean** | **0.827** | **0.893** | |
+
+---
+
+## Architecture
+
+```
+Face video (4 FPS)
+      |
+CLAHE preprocessing
+      |
+MediaPipe Face Mesh (478 landmarks)
+      |
+   ___|___
+  |       |
+Geometry  Patches (24x24 px)
+11 features  Left Eye / Right Eye / Mouth
+  |              |
+MinMaxScaler   TinyPatchCNN → 64-dim per frame
+  |              |
+  └──── FiLM ────┘
+    γ · CNN_emb + β   [geometry conditions visual features per frame]
+         |
+   concat [FiLM(cnn) | geo] → 96-dim
+         |
+  Confidence decay gating  (0.85^d for interpolated frames)
+         |
+  GRU (hidden=64, layers=1)
+         |
+  Temporal Attention  [learned frame weighting]
+         |
+  Linear(64→2) → ALERT / DROWSY
+```
+
+**Safety net:** Residual fallback keeps DL contribution bounded:
+$$S_{\text{final}} = S_{\text{XGBoost}} + \tanh(S_{\text{GRU}}) \times 0.15$$
+
+**Model specs:**
+- Parameters: ~9,347
+- Checkpoint size: 268 KB
+- Inference: < 10 ms per window on CPU
+- Throughput: ~30 FPS
+
+---
+
+## Dataset
+
+6 participants recorded under three conditions (alert / mild / drowsy).
+- 5 participants used after quality audit (participant1 excluded: 53.8% mesh failure rate)
+- 5,946 usable windows after `min_valid_rate = 0.80` filter
+- Evaluation: 5-fold Leave-One-Participant-Out CV (strict, no leakage)
