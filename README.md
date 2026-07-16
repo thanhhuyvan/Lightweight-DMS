@@ -78,33 +78,7 @@ python docker/predict.py --input video.mp4 --output predictions.csv
 
 ## Architecture
 
-```
-Face video (4 FPS)
-      |
-CLAHE preprocessing
-      |
-MediaPipe Face Mesh (478 landmarks)
-      |
-   ___|___
-  |       |
-Geometry  Patches (24x24 px)
-11 features  Left Eye / Right Eye / Mouth
-  |              |
-MinMaxScaler   TinyPatchCNN → 64-dim per frame
-  |              |
-  └──── FiLM ────┘
-    γ · CNN_emb + β   [geometry conditions visual features per frame]
-         |
-   concat [FiLM(cnn) | geo] → 96-dim
-         |
-  Confidence decay gating  (0.85^d for interpolated frames)
-         |
-  GRU (hidden=64, layers=1)
-         |
-  Temporal Attention  [learned frame weighting]
-         |
-  Linear(64→2) → ALERT / DROWSY
-```
+![Architecture Diagram](report/final_diagram.png)
 
 **Safety net:** Residual fallback keeps DL contribution bounded:
 $$S_{\text{final}} = S_{\text{XGBoost}} + \tanh(S_{\text{GRU}}) \times 0.15$$
