@@ -78,7 +78,7 @@ python docker/predict.py --input video.mp4 --output predictions.csv
 
 ## Architecture
 
-![Architecture Diagram](report/final_diagram.png)
+![Architecture Diagram](final_diagram.png)
 
 **Safety net:** Residual fallback keeps DL contribution bounded:
 $$S_{\text{final}} = S_{\text{XGBoost}} + \tanh(S_{\text{GRU}}) \times 0.15$$
