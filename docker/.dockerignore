@@ -1,0 +1,86 @@
+# .dockerignore
+# Prevents large and irrelevant files from being sent to the Docker build context.
+# Keep only what the inference container actually needs.
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Large data folders — NOT needed in container
+frame/
+frame/patches/
+frame/frames_raw/
+frame/frames_clahe/
+frame/frames_mesh/
+frame/failed_detections/
+frame/failed_detections.zip
+frame/csv/
+
+# Video files — mounted at runtime via -v, not baked in
+Video_container/
+
+# Training logs and outputs
+logs/
+report/
+
+# Research and experiment scripts
+research/
+handoff_training/
+
+# Training scripts — not needed for inference
+src/s4_training/
+src/s3_models/
+src/s2_features/
+src/s5_reporting/
+src/s1_data/
+src/models/
+
+# Model files NOT used for inference
+models/late_fusion_*.pth
+models/cnn_patches_*.pth
+models/film_gru_fold[124-9].pth
+models/film_gru_overfit.pth
+models/baseline_rf_model.joblib
+models/improved_model.joblib
+models/improved_scaler.joblib
+models/final_xgb_pose_model.joblib
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+
+# IDE / OS files
+.idea/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docs and reports (not needed at runtime)
+*.md
+!docker/DOCKER_PIPELINE.md
+report/
+image/
+*.pdf
+*.png
+*.jpg
+
+# Misc scripts not needed for inference
+analyze_log.py
+compare_scripts.py
+generate_*.py
+diagnose_*.py
+investigate_*.py
+to_csv.py
+main.py
+webcam_live_fps.py
+src/demo_app.py
+src/live_demo.py

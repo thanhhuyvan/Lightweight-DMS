@@ -585,6 +585,138 @@ def draw_hud(frame, metrics, prob, state, is_calibrating, calib_progress, alpha_
             cy_offset += 24
 
 # ---------------------------------------------------------------------------
+# Graph Panel (Demo Mode)
+# ---------------------------------------------------------------------------
+def draw_graph_panel(frame, ear_hist, prob_hist, perclos_hist, alpha_thresh):
+    """
+    Draws a 320px wide live graph panel appended to the RIGHT of the frame.
+    Called only when --demo flag is set. Does NOT replace any existing panel.
+    Each chart is drawn using cv2.polylines — zero extra dependencies.
+    """
+    h, w = frame.shape[:2]
+    PANEL_W = 320
+    PAD     = 18
+    CHART_H = int((h - PAD * 4) / 3)   # 3 charts stacked evenly
+
+    # Dark background panel
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (w - PANEL_W, 0), (w, h), (18, 18, 27), -1)
+    cv2.addWeighted(overlay, 0.88, frame, 0.12, 0, frame)
+    cv2.line(frame, (w - PANEL_W, 0), (w - PANEL_W, h), (49, 50, 68), 1)
+
+    # ── Helper: draw one line chart ──────────────────────────────────────
+    def draw_chart(data, y_top, y_min, y_max, label, color, threshold=None, thresh_color=(255, 80, 80), fill_above=False):
+        cx0 = w - PANEL_W + PAD
+        cx1 = w - PAD
+        cy0 = y_top
+        cy1 = y_top + CHART_H
+        chart_w = cx1 - cx0
+        chart_h = cy1 - cy0
+
+        # Background
+        cv2.rectangle(frame, (cx0 - 4, cy0 - 4), (cx1 + 4, cy1 + 4), (25, 25, 38), -1)
+        cv2.rectangle(frame, (cx0 - 4, cy0 - 4), (cx1 + 4, cy1 + 4), (49, 50, 68), 1)
+
+        # Label
+        cv2.putText(frame, label, (cx0, cy0 - 7),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.42, (166, 173, 200), 1)
+
+        # Y axis min/max labels
+        cv2.putText(frame, f"{y_max:.2f}", (cx1 + 6, cy0 + 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, (108, 112, 134), 1)
+        cv2.putText(frame, f"{y_min:.2f}", (cx1 + 6, cy1),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, (108, 112, 134), 1)
+
+        # Grid lines (3 horizontal)
+        for gi in range(1, 3):
+            gy = cy0 + int(chart_h * gi / 3)
+            cv2.line(frame, (cx0, gy), (cx1, gy), (35, 35, 50), 1)
+
+        # Threshold line
+        if threshold is not None:
+            t_norm = (threshold - y_min) / max(y_max - y_min, 1e-6)
+            ty = cy1 - int(t_norm * chart_h)
+            ty = max(cy0, min(cy1, ty))
+            cv2.line(frame, (cx0, ty), (cx1, ty), thresh_color, 1)
+            cv2.putText(frame, f"thresh", (cx0, ty - 3),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.33, thresh_color, 1)
+
+        if len(data) < 2:
+            return
+
+        # Fill zone above threshold (danger zone)
+        if fill_above and threshold is not None:
+            t_norm = (threshold - y_min) / max(y_max - y_min, 1e-6)
+            ty = cy1 - int(t_norm * chart_h)
+            fill_overlay = frame.copy()
+            cv2.rectangle(fill_overlay, (cx0, cy0), (cx1, min(cy1, ty)),
+                          (80, 20, 20), -1)
+            cv2.addWeighted(fill_overlay, 0.2, frame, 0.8, 0, frame)
+
+        # Plot points
+        pts = []
+        n = len(data)
+        for i, val in enumerate(data):
+            val_clipped = max(y_min, min(y_max, val))
+            norm = (val_clipped - y_min) / max(y_max - y_min, 1e-6)
+            px = cx0 + int(i * chart_w / max(n - 1, 1))
+            py = cy1 - int(norm * chart_h)
+            pts.append([px, py])
+
+        pts_arr = np.array(pts, dtype=np.int32).reshape(-1, 1, 2)
+        cv2.polylines(frame, [pts_arr], isClosed=False, color=color, thickness=2)
+
+        # Current value dot + label
+        last_val = data[-1]
+        last_pt  = pts[-1]
+        cv2.circle(frame, tuple(last_pt), 4, color, -1)
+        cv2.putText(frame, f"{last_val:.3f}", (last_pt[0] - 30, last_pt[1] - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+
+    # ── Chart 1: EAR over time ────────────────────────────────────────────
+    y1 = PAD + 15
+    draw_chart(
+        list(ear_hist), y1,
+        y_min=0.0, y_max=0.5,
+        label="EAR  (Eye Aspect Ratio — lower = closing)",
+        color=(46, 204, 113),
+        threshold=alpha_thresh,
+        thresh_color=(231, 76, 60),
+        fill_above=False,
+    )
+
+    # ── Chart 2: Drowsy Probability ───────────────────────────────────────
+    y2 = y1 + CHART_H + PAD + 15
+    draw_chart(
+        list(prob_hist), y2,
+        y_min=0.0, y_max=1.0,
+        label="Drowsy Probability  (model output)",
+        color=(243, 139, 168),
+        threshold=0.5,
+        thresh_color=(249, 226, 175),
+        fill_above=True,
+    )
+
+    # ── Chart 3: PERCLOS % ────────────────────────────────────────────────
+    y3 = y2 + CHART_H + PAD + 15
+    draw_chart(
+        list(perclos_hist), y3,
+        y_min=0.0, y_max=100.0,
+        label="PERCLOS %  (eye closure over 10s window)",
+        color=(137, 220, 235),
+        threshold=30.0,
+        thresh_color=(249, 226, 175),
+        fill_above=True,
+    )
+
+    # Panel title
+    cv2.putText(frame, "LIVE SIGNAL GRAPHS",
+                (w - PANEL_W + PAD, 14),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.55, (203, 166, 247), 2)
+    cv2.line(frame, (w - PANEL_W + PAD, 18), (w - PAD, 18), (49, 50, 68), 1)
+
+
+# ---------------------------------------------------------------------------
 # Main Execution Loop
 # ---------------------------------------------------------------------------
 def main():
@@ -597,6 +729,8 @@ def main():
     parser.add_argument("--calib-time", type=float, default=5.0, help="Calibration duration in seconds")
     parser.add_argument("--width", type=int, default=1280, help="Desired webcam resolution width")
     parser.add_argument("--height", type=int, default=720, help="Desired webcam resolution height")
+    parser.add_argument("--demo", action="store_true",
+                        help="Demo mode: append a live graph panel (EAR, Drowsy Prob, PERCLOS) to the right of the display.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -717,6 +851,11 @@ def main():
     calib_ear_vals = []
     calib_frames_target = int(args.calib_time * args.fps)
     alpha_threshold = 0.225
+
+    # Demo mode: rolling signal history for live graphs (40 points = 10s)
+    ear_graph_hist     = deque(maxlen=40)
+    prob_graph_hist    = deque(maxlen=40)
+    perclos_graph_hist = deque(maxlen=40)
     
     # UI Toggles
     show_profiler = True
@@ -976,7 +1115,18 @@ def main():
             
             calib_progress = len(calib_ear_vals) / calib_frames_target if is_calibrating else 1.0
             draw_hud(frame, metrics_display, drowsy_prob, drowsy_state, is_calibrating, calib_progress, alpha_threshold, fps_stats, show_profiler, show_insets, latest_patches, show_help)
-            
+
+            # ── Demo mode: update graph histories + extend frame ──────────
+            if args.demo:
+                cur_ear = metrics_display.get('ear', np.nan)
+                ear_graph_hist.append(float(cur_ear) if not np.isnan(cur_ear) else (ear_graph_hist[-1] if ear_graph_hist else 0.25))
+                prob_graph_hist.append(float(drowsy_prob))
+                perclos_graph_hist.append(float(metrics_display.get('perclos', 0.0)))
+
+                # Extend canvas 320px to the right for the graph panel
+                frame = cv2.copyMakeBorder(frame, 0, 0, 0, 320, cv2.BORDER_CONSTANT, value=(18, 18, 27))
+                draw_graph_panel(frame, ear_graph_hist, prob_graph_hist, perclos_graph_hist, alpha_threshold)
+
             cv2.imshow("DMS Realtime FPS Test", frame)
             
             render_deq.append((time.time() - t_render_start) * 1000.0)
