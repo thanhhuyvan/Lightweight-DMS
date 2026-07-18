@@ -29,6 +29,8 @@ LABEL version="1.0"
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libgl1 \
         libglib2.0-0 \
+        libgles2 \
+        libegl1 \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Working directory ─────────────────────────────────────────────────────
@@ -47,9 +49,10 @@ RUN pip install --no-cache-dir --upgrade pip \
 # ── Copy model weights ────────────────────────────────────────────────────
 # Only the best single-fold checkpoint is included (ONNX format).
 # Other folds can be mounted at runtime via -v if needed.
-COPY models/models/film_gru_fold3.onnx     /app/models/film_gru_fold3.onnx
-COPY models/models/final_scaler.joblib     /app/models/final_scaler.joblib
-COPY models/models/final_xgb_model.joblib  /app/models/final_xgb_model.joblib
+COPY models/models/film_gru_fold3.onnx      /app/models/film_gru_fold3.onnx
+COPY models/models/film_gru_fold3.onnx.data /app/models/film_gru_fold3.onnx.data
+COPY models/models/final_scaler.joblib      /app/models/final_scaler.joblib
+COPY models/models/final_xgb_model.joblib   /app/models/final_xgb_model.joblib
 
 # ── Copy MediaPipe face landmark model ───────────────────────────────────
 COPY face_landmarker.task           /app/face_landmarker.task

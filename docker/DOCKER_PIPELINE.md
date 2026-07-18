@@ -52,10 +52,11 @@ docker/
 
 Files copied INTO the container at build time (from project root):
 ```
-models/film_gru_fold3.onnx    <- Best single-fold checkpoint in ONNX format
-face_landmarker.task          <- MediaPipe landmark model (3.5 MB)
-src/core_config.py            <- Pipeline configuration constants
-docker/predict.py             <- Inference script
+models/models/film_gru_fold3.onnx      <- Best single-fold checkpoint in ONNX format
+models/models/film_gru_fold3.onnx.data <- ONNX model external weights data file
+face_landmarker.task                   <- MediaPipe landmark model (3.5 MB)
+src/core_config.py                     <- Pipeline configuration constants
+docker/predict.py                      <- Inference script
 ```
 
 ---
