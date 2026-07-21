@@ -719,12 +719,32 @@ def draw_graph_panel(frame, ear_hist, prob_hist, perclos_hist, alpha_thresh):
 # ---------------------------------------------------------------------------
 # Main Execution Loop
 # ---------------------------------------------------------------------------
+def resolve_project_path(path_value, fallback_values=()):
+    """
+    Resolve CLI paths from either the caller's current directory or PROJECT_ROOT.
+    This keeps `python Buồn_ngủ/webcam_live_fps.py` working when launched from E:\\.
+    """
+    candidates = [Path(path_value), *(Path(v) for v in fallback_values)]
+    for candidate in candidates:
+        if candidate.is_absolute() and candidate.exists():
+            return candidate
+        if candidate.exists():
+            return candidate
+        rooted = PROJECT_ROOT / candidate
+        if rooted.exists():
+            return rooted
+    first = Path(path_value)
+    return first if first.is_absolute() else PROJECT_ROOT / first
+
+
 def main():
     parser = argparse.ArgumentParser(description="Real-Time Webcam DMS & FPS Benchmark")
     parser.add_argument("--camera", type=int, default=0, help="Webcam device index (default: 0)")
-    parser.add_argument("--model", type=str, default="models/film_gru_fold3.pth", help="Path to PyTorch model weights")
+    parser.add_argument("--model", type=str, default="models/models/film_gru_fold3.pth", help="Path to PyTorch model weights")
     parser.add_argument("--scaler", type=str, default="models/final_scaler.joblib", help="Path to MinMaxScaler joblib")
     parser.add_argument("--xgb-model", type=str, default="models/final_xgb_model.joblib", help="Path to XGBoost baseline fallback model")
+    parser.add_argument("--no-attention", action="store_true",
+                        help="Disable temporal attention when loading FiLM+GRU checkpoints.")
     parser.add_argument("--fps", type=int, default=4, help="Model evaluation frequency in Hz (default: 4)")
     parser.add_argument("--calib-time", type=float, default=5.0, help="Calibration duration in seconds")
     parser.add_argument("--width", type=int, default=1280, help="Desired webcam resolution width")
@@ -740,25 +760,39 @@ def main():
     model = None
     model_enabled = False
     try:
-        model_path = Path(args.model)
+        model_path = resolve_project_path(
+            args.model,
+            fallback_values=(
+                "models/film_gru_fold3.pth",
+                "models/models/film_gru_fold3.pth",
+            ),
+        )
         if model_path.exists():
             model = FiLMGRUModel(
                 num_classes=2, cnn_dim=64, geo_dim=11,
                 geo_hidden=32, gru_hidden=64, gru_layers=1,
                 dropout=0.3, use_film=True
             ).to(device)
+            model.use_attention = not args.no_attention
             model.load_state_dict(torch.load(model_path, map_location=device))
             model.eval()
             model_enabled = True
             print(f"Loaded FiLM+GRU model: {model_path}")
+            print(f"Temporal attention: {'ENABLED' if model.use_attention else 'DISABLED'}")
         else:
-            print(f"Warning: Model not found at {args.model}. Inference will run in fallback/dummy mode.")
+            print(f"Warning: Model not found at {model_path}. Inference will run in fallback/dummy mode.")
     except Exception as e:
         print(f"Error loading PyTorch model: {e}. Model inference will be disabled.")
 
     # 2. Load MinMaxScaler Scaler
     scaler = None
-    scaler_path = Path(args.scaler)
+    scaler_path = resolve_project_path(
+        args.scaler,
+        fallback_values=(
+            "models/models/final_scaler.joblib",
+            "models/final_scaler.joblib",
+        ),
+    )
     if scaler_path.exists():
         try:
             scaler = joblib.load(scaler_path)
@@ -775,7 +809,13 @@ def main():
     # 3. Load XGBoost Baseline model
     xgb_model = None
     xgb_enabled = False
-    xgb_path = Path(args.xgb_model)
+    xgb_path = resolve_project_path(
+        args.xgb_model,
+        fallback_values=(
+            "models/models/final_xgb_model.joblib",
+            "models/final_xgb_model.joblib",
+        ),
+    )
     if xgb_path.exists():
         try:
             xgb_model = joblib.load(xgb_path)
@@ -787,7 +827,7 @@ def main():
     # 4. MediaPipe FaceLandmarker Setup
     temp_landmarker_path = os.path.join(tempfile.gettempdir(), "face_landmarker.task")
     # Reference task file from config or check current directory
-    landmarker_src = Path("face_landmarker.task")
+    landmarker_src = resolve_project_path("face_landmarker.task", fallback_values=(CONFIG_MODEL_PATH,))
     if not landmarker_src.exists():
         landmarker_src = CONFIG_MODEL_PATH
         
