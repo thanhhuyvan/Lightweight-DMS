@@ -167,3 +167,9 @@ report/
 video/
 Video_container/
 face_landmarker.task
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
